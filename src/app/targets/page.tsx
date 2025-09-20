@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -27,6 +26,22 @@ interface StudyPlan {
   schedule: ScheduleItem[];
   createdAt: Timestamp;
 }
+
+// A simple markdown to HTML converter
+const markdownToHtml = (markdown: string) => {
+  if (!markdown) return '';
+  return markdown
+    .replace(/### (.*)/g, '<h3 class="font-semibold text-lg mb-2 mt-4">$1</h3>') // h3
+    .replace(/## (.*)/g, '<h2 class="font-semibold text-xl mb-3 mt-5">$1</h2>')   // h2
+    .replace(/# (.*)/g, '<h1>$1</h1>')   // h1
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+    .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
+    .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">$1</a>') // Links
+    .replace(/^- (.*)/gm, '<ul class="list-disc pl-5"><li>$1</li></ul>') // Basic lists (will wrap each item in a ul)
+    .replace(/<\/ul>\n<ul class="list-disc pl-5">/g, '') // Combine consecutive list items
+    .replace(/\n/g, '<br />'); // New lines
+}
+
 
 function TodayNotes({ topic }: { topic: string }) {
   const [notes, setNotes] = useState<GetNotesForTopicOutput | null>(null);
@@ -67,7 +82,7 @@ function TodayNotes({ topic }: { topic: string }) {
   return (
     <div 
       className="prose prose-sm max-w-none bg-muted rounded-lg p-4 prose-headings:font-semibold prose-a:text-primary hover:prose-a:underline" 
-      dangerouslySetInnerHTML={{ __html: notes.notes.replace(/\n/g, '<br />') }} 
+      dangerouslySetInnerHTML={{ __html: markdownToHtml(notes.notes) }} 
     />
   );
 }
@@ -105,20 +120,6 @@ export default function TargetsPage() {
     );
   }
 
-  // A simple markdown to HTML converter
-  const markdownToHtml = (markdown: string) => {
-    return markdown
-      .replace(/### (.*)/g, '<h3>$1</h3>') // h3
-      .replace(/## (.*)/g, '<h2>$1</h2>') // h2
-      .replace(/# (.*)/g, '<h1>$1</h1>') // h1
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
-      .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
-      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">$1</a>') // Links
-      .replace(/^- (.*)/gm, '<ul><li>$1</li></ul>') // Basic lists (will wrap each item in a ul)
-      .replace(/<\/ul>\n<ul>/g, '') // Combine consecutive list items
-      .replace(/\n/g, '<br />'); // New lines
-  }
-  
   return (
     <main className="flex-1 p-4 md:p-6">
       <h1 className="text-2xl font-bold mb-6">Your Saved Study Targets</h1>
