@@ -8,6 +8,7 @@ const titles: { [key: string]: string } = {
   "/progress": "Your Progress",
   "/resources": "Study Resources",
   "/targets": "Your Targets",
+  "/ai-chat": "AI Assistant",
 };
 
 export function Header() {
