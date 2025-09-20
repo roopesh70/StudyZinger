@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { providePersonalizedStudyTips } from "@/ai/flows/provide-personalized-study-tips";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,13 +8,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const mockProgressSummary = "User is excelling in Algebra, with a 95% completion rate on assignments. However, they are struggling with Chemistry, especially with stoichiometry, where their completion rate is only 40%. They also seem to study inconsistently, with long sessions on weekends but very few during the week.";
+interface StudyTipsGeneratorProps {
+  initialSummary?: string;
+}
 
-export function StudyTipsGenerator() {
+const defaultSummary = "User is excelling in Algebra, with a 95% completion rate on assignments. However, they are struggling with Chemistry, especially with stoichiometry, where their completion rate is only 40%. They also seem to study inconsistently, with long sessions on weekends but very few during the week.";
+
+export function StudyTipsGenerator({ initialSummary }: StudyTipsGeneratorProps) {
   const [tips, setTips] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [summary, setSummary] = useState(mockProgressSummary);
+  const [summary, setSummary] = useState(initialSummary || defaultSummary);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (initialSummary) {
+      setSummary(initialSummary);
+    }
+  }, [initialSummary]);
 
   async function getTips() {
     setLoading(true);
@@ -51,10 +61,11 @@ export function StudyTipsGenerator() {
             onChange={(e) => setSummary(e.target.value)}
             rows={5}
             placeholder="A summary of your study progress..."
+            disabled={loading}
           />
-          <p className="text-xs text-muted-foreground mt-1">This is pre-filled with a sample summary. You can edit it to reflect your own progress.</p>
+          <p className="text-xs text-muted-foreground mt-1">This summary is generated from your saved targets. You can edit it to get different tips.</p>
         </div>
-        <Button onClick={getTips} disabled={loading}>
+        <Button onClick={getTips} disabled={loading || !summary}>
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Get My Tips
         </Button>
