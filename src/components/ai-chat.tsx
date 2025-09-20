@@ -28,23 +28,28 @@ interface Message {
 const markdownToHtml = (markdown: string) => {
     if (!markdown) return '';
     let html = markdown
+      .replace(/```([\s\S]*?)```/g, (match, code) => {
+          const escapedCode = code.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          return `<pre class="bg-card p-2 rounded-md my-2 text-sm"><code>${escapedCode}</code></pre>`;
+      })
+      .replace(/`(.*?)`/g, '<code class="bg-card px-1 rounded-md text-sm">$1</code>') // Inline code
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
       .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
-      .replace(/```([\s\S]*?)```/g, '<pre class="bg-card p-2 rounded-md my-2"><code>$1</code></pre>') // Code blocks
-      .replace(/`(.*?)`/g, '<code class="bg-card px-1 rounded-md">$1</code>') // Inline code
       .replace(/^- (.*)/gm, '<li>$1</li>') // Unordered list items
       .replace(/^\* (.*)/gm, '<li>$1</li>'); // Unordered list items (alternative)
   
     // Wrap consecutive list items in a <ul>
     html = html.replace(/<li>/g, '<ul><li>').replace(/<\/li>\n/g, '</li></ul>\n');
-    html = html.replace(/<\/ul>\n<ul>/g, '\n');
+    html = html.replace(/(<\/ul>\s*<ul>)/g, '');
   
     // Handle numbered lists
     html = html.replace(/^\d+\. (.*)/gm, '<ol><li>$1</li></ol>');
-    html = html.replace(/<\/ol>\n<ol>/g, '\n');
+    html = html.replace(/(<\/ol>\s*<ol>)/g, '');
   
     html = html.replace(/\n/g, '<br />');
-    html = html.replace(/<br \/><br \/>/g, '<br />');
+    // Prevent double line breaks from list processing
+    html = html.replace(/<br \/>\s*<br \/>/g, '<br />');
+    html = html.replace(/<\/li><br \/>/g, '</li>');
     
     return html;
 }
@@ -104,7 +109,7 @@ export function AIChat() {
                 )}
                  <div className={`rounded-lg p-3 max-w-[80%] ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                   {message.role === 'assistant' ? (
-                     <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: markdownToHtml(message.content) }} />
+                     <div className="prose prose-sm max-w-none prose-pre:bg-background prose-code:text-primary" dangerouslySetInnerHTML={{ __html: markdownToHtml(message.content) }} />
                   ) : (
                      <p>{message.content}</p>
                   )}
