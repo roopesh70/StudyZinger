@@ -1,3 +1,5 @@
+"use client";
+
 import { StudyTipsGenerator } from "@/components/study-tips-generator";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
