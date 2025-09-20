@@ -8,7 +8,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {generate} from 'genkit/generate';
+import {generate} from 'genkit';
 
 const TaskSchema = z.object({
   topic: z.string(),
@@ -39,9 +39,14 @@ const mailjetSend = ai.defineTool(
     outputSchema: z.void(),
   },
   async ({recipientEmail, recipientName, subject, htmlContent}) => {
-    const mailjetApiKey = '1f74b59545ee2717353f7c05880738bc';
-    // This is a placeholder secret. In a real app, use a secret manager.
-    const mailjetApiSecret = 'placeholder-secret'; 
+    const mailjetApiKey = process.env.MAILJET_API_KEY;
+    const mailjetApiSecret = process.env.MAILJET_API_SECRET; 
+
+    if (!mailjetApiKey || !mailjetApiSecret) {
+      console.error("Mailjet API key or secret is not set.");
+      // In a real app, you might want to throw an error or handle this differently
+      return; 
+    }
 
     const body = {
       Messages: [
