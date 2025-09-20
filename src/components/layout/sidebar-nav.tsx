@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Calendar, LineChart, BrainCircuit } from "lucide-react";
+import { BookOpen, Home, LineChart, BrainCircuit } from "lucide-react";
 
 import {
   SidebarHeader,
@@ -15,7 +15,7 @@ import {
 import { MotivationalQuote } from "@/components/motivational-quote";
 
 const links = [
-  { href: "/", label: "Schedule", icon: Calendar },
+  { href: "/", label: "Home", icon: Home },
   { href: "/progress", label: "Progress", icon: LineChart },
   { href: "/resources", label: "Resources", icon: BookOpen },
 ];

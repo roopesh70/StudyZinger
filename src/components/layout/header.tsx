@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 const titles: { [key: string]: string } = {
-  "/": "Your Study Schedule",
+  "/": "Home",
   "/progress": "Your Progress",
   "/resources": "Study Resources",
 };
