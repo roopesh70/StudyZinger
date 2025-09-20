@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, ArrowRight, BookCopy, CalendarDays, Clock, Languages, BrainCircuit } from "lucide-react";
+import { Calendar as CalendarIcon, ArrowRight, BookCopy, CalendarDays, Clock, Languages, BrainCircuit, Save } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -19,6 +19,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
+import { db } from "@/lib/firebase";
+import { collection, addDoc } from "firebase/firestore";
 
 const formSchema = z.object({
   topic: z.string().min(5, { message: "Topic must be at least 5 characters." }),
@@ -36,6 +38,7 @@ type FormValues = z.infer<typeof formSchema>;
 export function ScheduleGenerator() {
   const [result, setResult] = useState<GeneratePersonalizedStudyScheduleOutput | null>(null);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<FormValues>({
@@ -71,6 +74,32 @@ export function ScheduleGenerator() {
       setLoading(false);
     }
   }
+
+  const handleSave = async () => {
+    if (!result) return;
+    setSaving(true);
+    try {
+      await addDoc(collection(db, "studyPlans"), {
+        topic: form.getValues("topic"),
+        schedule: result.schedule,
+        notes: result.notes,
+        createdAt: new Date(),
+      });
+      toast({
+        title: "Success!",
+        description: "Your study plan has been saved to Targets.",
+      });
+    } catch (error) {
+      console.error("Error saving document: ", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to save study plan. Please try again.",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const suggestionClicked = (topic: string) => {
     form.setValue("topic", topic);
@@ -217,8 +246,14 @@ export function ScheduleGenerator() {
 
       {result && (
         <div className="mt-12 text-left space-y-8">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold flex items-center"><CalendarDays className="mr-3" /> Your Study Schedule</h2>
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Save
+              </Button>
+            </div>
             <div>
-                <h2 className="text-2xl font-bold flex items-center mb-4"><CalendarDays className="mr-3" /> Your Study Schedule</h2>
                 <Card>
                   <CardContent className="p-0">
                     <Table>
