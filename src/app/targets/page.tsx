@@ -3,20 +3,24 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { collection, query, orderBy, getDocs, Timestamp } from "firebase/firestore";
+import { collection, query, orderBy, getDocs, Timestamp, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, BookCopy, CalendarDays, Edit } from "lucide-react";
+import { Loader2, BookCopy, CalendarDays, Edit, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { isToday } from "date-fns";
+import { isToday, parseISO } from "date-fns";
 import { getNotesForTopic, GetNotesForTopicOutput } from "@/ai/flows/get-notes-for-topic";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 interface ScheduleItem {
   day: string;
   date: string;
   topic: string;
   tasks: string;
+  status: 'pending' | 'completed' | 'missed';
 }
 
 interface StudyPlan {
@@ -87,30 +91,80 @@ function TodayNotes({ topic }: { topic: string }) {
   );
 }
 
+const statusIcons = {
+  completed: <CheckCircle className="h-5 w-5 text-green-500" />,
+  missed: <XCircle className="h-5 w-5 text-red-500" />,
+  pending: <AlertCircle className="h-5 w-5 text-yellow-500" />,
+};
+
+const statusColors: { [key: string]: 'default' | 'destructive' | 'secondary' } = {
+  completed: 'default',
+  missed: 'destructive',
+  pending: 'secondary',
+};
+
 export default function TargetsPage() {
   const [studyPlans, setStudyPlans] = useState<StudyPlan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState<{[key: string]: boolean}>({});
+  const { toast } = useToast();
+
+  async function fetchStudyPlans() {
+    setLoading(true);
+    try {
+      const q = query(collection(db, "studyPlans"), orderBy("createdAt", "desc"));
+      const querySnapshot = await getDocs(q);
+      const plans = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as StudyPlan[];
+      setStudyPlans(plans);
+    } catch (error) {
+      console.error("Error fetching study plans: ", error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function fetchStudyPlans() {
-      setLoading(true);
-      try {
-        const q = query(collection(db, "studyPlans"), orderBy("createdAt", "desc"));
-        const querySnapshot = await getDocs(q);
-        const plans = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as StudyPlan[];
-        setStudyPlans(plans);
-      } catch (error) {
-        console.error("Error fetching study plans: ", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     fetchStudyPlans();
   }, []);
+
+  const handleUpdateStatus = async (planId: string, itemDate: string, newStatus: 'completed' | 'pending') => {
+    setUpdating(prev => ({...prev, [`${planId}-${itemDate}`]: true}));
+    try {
+      const planIndex = studyPlans.findIndex(p => p.id === planId);
+      if (planIndex === -1) return;
+
+      const newStudyPlans = [...studyPlans];
+      const plan = newStudyPlans[planIndex];
+      const newSchedule = plan.schedule.map(item => 
+        item.date === itemDate ? {...item, status: newStatus} : item
+      );
+
+      const planRef = doc(db, "studyPlans", planId);
+      await updateDoc(planRef, { schedule: newSchedule });
+      
+      newStudyPlans[planIndex].schedule = newSchedule;
+      setStudyPlans(newStudyPlans);
+
+      toast({
+        title: "Success",
+        description: `Task marked as ${newStatus}.`,
+      });
+
+    } catch (error) {
+      console.error("Error updating status: ", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update task status.",
+      });
+    } finally {
+       setUpdating(prev => ({...prev, [`${planId}-${itemDate}`]: false}));
+    }
+  };
+
 
   if (loading) {
     return (
@@ -130,7 +184,7 @@ export default function TargetsPage() {
       ) : (
         <Accordion type="single" collapsible className="w-full space-y-4">
           {studyPlans.map(plan => {
-             const todaysTopic = plan.schedule.find(item => isToday(new Date(item.date)))?.topic;
+             const todaysTopic = plan.schedule.find(item => isToday(parseISO(item.date)))?.topic;
             return (
             <Card key={plan.id}>
               <AccordionItem value={plan.id} className="border-0">
@@ -152,14 +206,17 @@ export default function TargetsPage() {
                                     <TableHeader>
                                         <TableRow>
                                         <TableHead className="w-[80px]">Day</TableHead>
-                                        <TableHead className="w-[150px]">Date</TableHead>
+                                        <TableHead className="w-[120px]">Date</TableHead>
                                         <TableHead>Topic</TableHead>
                                         <TableHead>Tasks</TableHead>
+                                        <TableHead className="w-[100px]">Status</TableHead>
+                                        <TableHead className="w-[120px]">Action</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {plan.schedule.map((item, index) => {
-                                          const isCurrentDay = isToday(new Date(item.date));
+                                          const isCurrentDay = isToday(parseISO(item.date));
+                                          const isItemUpdating = updating[`${plan.id}-${item.date}`];
                                           return (
                                             <TableRow 
                                               key={index}
@@ -169,6 +226,34 @@ export default function TargetsPage() {
                                                 <TableCell className={cn(isCurrentDay && "font-bold text-primary")}>{item.date}</TableCell>
                                                 <TableCell>{item.topic}</TableCell>
                                                 <TableCell>{item.tasks}</TableCell>
+                                                <TableCell>
+                                                  <Badge variant={statusColors[item.status]} className="capitalize">
+                                                    {item.status}
+                                                  </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                  {item.status !== 'completed' ? (
+                                                    <Button 
+                                                      size="sm" 
+                                                      variant="outline"
+                                                      onClick={() => handleUpdateStatus(plan.id, item.date, 'completed')}
+                                                      disabled={isItemUpdating}
+                                                    >
+                                                      {isItemUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                      Done
+                                                    </Button>
+                                                  ) : (
+                                                    <Button 
+                                                      size="sm" 
+                                                      variant="secondary"
+                                                      onClick={() => handleUpdateStatus(plan.id, item.date, 'pending')}
+                                                      disabled={isItemUpdating}
+                                                    >
+                                                       {isItemUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                      Undo
+                                                    </Button>
+                                                  )}
+                                                </TableCell>
                                             </TableRow>
                                           );
                                         })}

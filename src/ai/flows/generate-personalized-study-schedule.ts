@@ -14,7 +14,7 @@ import {z} from 'genkit';
 const GeneratePersonalizedStudyScheduleInputSchema = z.object({
   topic: z.string().describe('The topic to study.'),
   duration: z.string().describe('The total duration of the study plan (e.g., "2 weeks", "1 month").'),
-  startDate: z.string().describe('The start date of the study plan.'),
+  startDate: z.string().describe("The start date of the study plan in 'yyyy-MM-dd' format."),
   dailyStudyTime: z.string().describe('The amount of time to study each day (e.g., "2 hours").'),
   skillLevel: z
     .enum(['Beginner', 'Intermediate', 'Advanced'])
@@ -27,7 +27,7 @@ export type GeneratePersonalizedStudyScheduleInput = z.infer<
 
 const ScheduleItemSchema = z.object({
   day: z.string().describe("The day number (e.g., 'Day 1')."),
-  date: z.string().describe("The date for the study session (e.g., '2024-07-29')."),
+  date: z.string().describe("The date for the study session in 'yyyy-MM-dd' format."),
   topic: z.string().describe("The sub-topic to be covered on this day."),
   tasks: z.string().describe("A brief description of the tasks or goals for the day."),
 });
@@ -60,7 +60,7 @@ const generatePersonalizedStudySchedulePrompt = ai.definePrompt({
   Language: {{{language}}}
 
   Instructions:
-  1.  **Create a Study Schedule**: Generate a day-by-day study plan for the specified duration. The schedule should be an array of objects, where each object contains "day", "date", "topic", and "tasks". Break down the main topic into smaller, manageable sub-topics for each day.
+  1.  **Create a Study Schedule**: Generate a day-by-day study plan for the specified duration. The schedule should be an array of objects, where each object contains "day", "date", "topic", and "tasks". The 'date' must be in 'yyyy-MM-dd' format. Break down the main topic into smaller, manageable sub-topics for each day.
   2.  **Generate Introductory Notes**: For each of the main sub-topics identified in the schedule, create concise introductory notes. Format these notes using Markdown. Use headings, bold text for key terms, and bullet points for lists.
   3.  **Include Rich Reference Links**: For each main sub-topic, include 2-3 relevant reference links. These should be high-quality resources like Wikipedia articles, Khan Academy videos, relevant YouTube tutorials, or official documentation (like W3Schools for web development topics). The goal is to provide a rich set of external resources similar to what a dedicated resource curator would find.
 

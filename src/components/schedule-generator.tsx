@@ -60,7 +60,7 @@ export function ScheduleGenerator() {
     try {
       const input = {
         ...values,
-        startDate: format(values.startDate, "PPP"),
+        startDate: format(values.startDate, "yyyy-MM-dd"),
       };
       const response = await generatePersonalizedStudySchedule(input);
       setResult(response);
@@ -80,12 +80,17 @@ export function ScheduleGenerator() {
     if (!result) return;
     setSaving(true);
     try {
+      const scheduleWithStatus = result.schedule.map(item => ({...item, status: 'pending'}));
+      
       await addDoc(collection(db, "studyPlans"), {
         topic: form.getValues("topic"),
-        schedule: result.schedule,
+        schedule: scheduleWithStatus,
         notes: result.notes,
         createdAt: serverTimestamp(),
+        // In a real app, you'd get this from auth
+        userEmail: "test-user@example.com" 
       });
+
       toast({
         title: "Success!",
         description: "Your study plan has been saved to Targets.",
@@ -264,6 +269,7 @@ export function ScheduleGenerator() {
                           <TableHead className="w-[150px]">Date</TableHead>
                           <TableHead>Topic</TableHead>
                           <TableHead>Tasks</TableHead>
+                          <TableHead>Status</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -273,6 +279,7 @@ export function ScheduleGenerator() {
                             <TableCell>{item.date}</TableCell>
                             <TableCell>{item.topic}</TableCell>
                             <TableCell>{item.tasks}</TableCell>
+                            <TableCell>Pending</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
