@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState } from "react";
@@ -89,7 +90,8 @@ export function ScheduleGenerator() {
         notes: result.notes,
         createdAt: serverTimestamp(),
         // In a real app, you'd get this from auth
-        userEmail: "test-user@example.com" 
+        userEmail: "test-user@example.com",
+        autoDeleteOnCompletion: false
       });
 
       toast({
