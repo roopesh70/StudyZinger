@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { collection, query, orderBy, getDocs, Timestamp } from "firebase/firestore";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, BookCopy, CalendarDays } from "lucide-react";
 
@@ -108,7 +108,7 @@ export default function TargetsPage() {
                         </div>
                         <div>
                             <h3 className="text-lg font-bold flex items-center mb-2"><BookCopy className="mr-2" /> Introductory Notes</h3>
-                            <div className="prose prose-sm max-w-none bg-muted rounded-lg p-4 whitespace-pre-wrap">{plan.notes}</div>
+                            <div className="prose prose-sm max-w-none bg-muted rounded-lg p-4 whitespace-pre-wrap prose-headings:font-semibold prose-a:text-primary hover:prose-a:underline" dangerouslySetInnerHTML={{ __html: plan.notes.replace(/\n/g, '<br />') }} />
                         </div>
                     </div>
                 </AccordionContent>

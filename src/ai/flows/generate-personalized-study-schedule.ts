@@ -34,7 +34,7 @@ const ScheduleItemSchema = z.object({
 
 const GeneratePersonalizedStudyScheduleOutputSchema = z.object({
   schedule: z.array(ScheduleItemSchema).describe('The generated day-by-day study schedule.'),
-  notes: z.string().describe('Introductory notes for the main topics in the study plan.'),
+  notes: z.string().describe('Introductory notes for the main topics in the study plan, formatted in Markdown.'),
 });
 export type GeneratePersonalizedStudyScheduleOutput = z.infer<
   typeof GeneratePersonalizedStudyScheduleOutputSchema
@@ -61,7 +61,7 @@ const generatePersonalizedStudySchedulePrompt = ai.definePrompt({
 
   Instructions:
   1.  **Create a Study Schedule**: Generate a day-by-day study plan for the specified duration. The schedule should be an array of objects, where each object contains "day", "date", "topic", and "tasks". Break down the main topic into smaller, manageable sub-topics for each day.
-  2.  **Generate Introductory Notes**: For each of the main sub-topics identified in the schedule, create concise introductory notes. These notes should provide a brief overview, key concepts, and important definitions. This will serve as a starting point for the user's study sessions.
+  2.  **Generate Introductory Notes**: For each of the main sub-topics identified in the schedule, create concise introductory notes. Format these notes using Markdown. Use headings, bold text for key terms, and bullet points for lists. Also, include 1-2 relevant reference links (like Wikipedia, Khan Academy, or other reputable sources) for each main sub-topic.
 
   Output the schedule and notes in the specified JSON format.
 `,

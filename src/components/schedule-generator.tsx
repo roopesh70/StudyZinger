@@ -277,11 +277,11 @@ export function ScheduleGenerator() {
                       </TableBody>
                     </Table>
                   </CardContent>
-                </Card>
+                </card>
             </div>
             <div>
                 <h2 className="text-2xl font-bold flex items-center mb-4"><BookCopy className="mr-3" /> Introductory Notes</h2>
-                <div className="prose prose-sm max-w-none bg-muted rounded-lg p-4 whitespace-pre-wrap">{result.notes}</div>
+                <div className="prose prose-sm max-w-none bg-muted rounded-lg p-4 whitespace-pre-wrap prose-headings:font-semibold prose-a:text-primary hover:prose-a:underline" dangerouslySetInnerHTML={{ __html: result.notes.replace(/\n/g, '<br />') }} />
             </div>
         </div>
       )}
