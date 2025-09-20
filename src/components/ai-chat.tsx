@@ -26,17 +26,29 @@ interface Message {
 
 // Simple markdown to HTML renderer
 const markdownToHtml = (markdown: string) => {
-  if (!markdown) return '';
-  return markdown
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
-    .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
-    .replace(/```([\s\S]*?)```/g, '<pre class="bg-card p-2 rounded-md my-2"><code>$1</code></pre>') // Code blocks
-    .replace(/`(.*?)`/g, '<code class="bg-card px-1 rounded-md">$1</code>') // Inline code
-    .replace(/^- (.*)/gm, '<li>$1</li>') // List items
-    .replace(/<\/li><li>/g, '</li><li>')
-    .replace(/(<li>.*<\/li>)/g, '<ul class="list-disc pl-5">$1</ul>')
-    .replace(/\n/g, '<br />'); // New lines
+    if (!markdown) return '';
+    let html = markdown
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+      .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
+      .replace(/```([\s\S]*?)```/g, '<pre class="bg-card p-2 rounded-md my-2"><code>$1</code></pre>') // Code blocks
+      .replace(/`(.*?)`/g, '<code class="bg-card px-1 rounded-md">$1</code>') // Inline code
+      .replace(/^- (.*)/gm, '<li>$1</li>') // Unordered list items
+      .replace(/^\* (.*)/gm, '<li>$1</li>'); // Unordered list items (alternative)
+  
+    // Wrap consecutive list items in a <ul>
+    html = html.replace(/<li>/g, '<ul><li>').replace(/<\/li>\n/g, '</li></ul>\n');
+    html = html.replace(/<\/ul>\n<ul>/g, '\n');
+  
+    // Handle numbered lists
+    html = html.replace(/^\d+\. (.*)/gm, '<ol><li>$1</li></ol>');
+    html = html.replace(/<\/ol>\n<ol>/g, '\n');
+  
+    html = html.replace(/\n/g, '<br />');
+    html = html.replace(/<br \/><br \/>/g, '<br />');
+    
+    return html;
 }
+
 
 export function AIChat() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -87,7 +99,7 @@ export function AIChat() {
               <div key={index} className={`flex items-start gap-4 ${message.role === 'user' ? 'justify-end' : ''}`}>
                 {message.role === 'assistant' && (
                   <Avatar className="h-8 w-8 bg-primary text-primary-foreground">
-                    <AvatarFallback><BrainCircuit className="size-5" /></AvatarFallback>
+                    <AvatarFallback className="font-bold text-sm">AI</AvatarFallback>
                   </Avatar>
                 )}
                  <div className={`rounded-lg p-3 max-w-[80%] ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
@@ -107,7 +119,7 @@ export function AIChat() {
              {loading && (
                 <div className="flex items-start gap-4">
                     <Avatar className="h-8 w-8 bg-primary text-primary-foreground">
-                        <AvatarFallback><BrainCircuit className="size-5" /></AvatarFallback>
+                        <AvatarFallback className="font-bold text-sm">AI</AvatarFallback>
                     </Avatar>
                     <div className="rounded-lg p-3 bg-muted">
                         <Loader2 className="h-5 w-5 animate-spin" />
