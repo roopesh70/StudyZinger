@@ -61,7 +61,8 @@ const generatePersonalizedStudySchedulePrompt = ai.definePrompt({
 
   Instructions:
   1.  **Create a Study Schedule**: Generate a day-by-day study plan for the specified duration. The schedule should be an array of objects, where each object contains "day", "date", "topic", and "tasks". Break down the main topic into smaller, manageable sub-topics for each day.
-  2.  **Generate Introductory Notes**: For each of the main sub-topics identified in the schedule, create concise introductory notes. Format these notes using Markdown. Use headings, bold text for key terms, and bullet points for lists. Also, include 1-2 relevant reference links (like Wikipedia, Khan Academy, or other reputable sources) for each main sub-topic.
+  2.  **Generate Introductory Notes**: For each of the main sub-topics identified in the schedule, create concise introductory notes. Format these notes using Markdown. Use headings, bold text for key terms, and bullet points for lists.
+  3.  **Include Rich Reference Links**: For each main sub-topic, include 2-3 relevant reference links. These should be high-quality resources like Wikipedia articles, Khan Academy videos, relevant YouTube tutorials, or official documentation (like W3Schools for web development topics). The goal is to provide a rich set of external resources similar to what a dedicated resource curator would find.
 
   Output the schedule and notes in the specified JSON format.
 `,
