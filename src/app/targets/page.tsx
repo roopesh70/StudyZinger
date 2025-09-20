@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { collection, query, orderBy, getDocs } from "firebase/firestore";
+import { collection, query, orderBy, getDocs, Timestamp } from "firebase/firestore";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -20,10 +20,7 @@ interface StudyPlan {
   topic: string;
   notes: string;
   schedule: ScheduleItem[];
-  createdAt: {
-    seconds: number;
-    nanoseconds: number;
-  };
+  createdAt: Timestamp;
 }
 
 export default function TargetsPage() {
@@ -76,7 +73,7 @@ export default function TargetsPage() {
                    <div className="text-left">
                         <h2 className="text-xl font-semibold">{plan.topic}</h2>
                         <p className="text-sm text-muted-foreground">
-                            Saved on: {new Date(plan.createdAt.seconds * 1000).toLocaleDateString()}
+                            Saved on: {plan.createdAt ? new Date(plan.createdAt.seconds * 1000).toLocaleDateString() : 'Date not available'}
                         </p>
                    </div>
                 </AccordionTrigger>

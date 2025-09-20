@@ -20,7 +20,7 @@ import { Loader2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { db } from "@/lib/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 const formSchema = z.object({
   topic: z.string().min(5, { message: "Topic must be at least 5 characters." }),
@@ -83,7 +83,7 @@ export function ScheduleGenerator() {
         topic: form.getValues("topic"),
         schedule: result.schedule,
         notes: result.notes,
-        createdAt: new Date(),
+        createdAt: serverTimestamp(),
       });
       toast({
         title: "Success!",
