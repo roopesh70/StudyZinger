@@ -7,6 +7,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, BookCopy, CalendarDays } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { format, isToday } from "date-fns";
 
 interface ScheduleItem {
   day: string;
@@ -93,14 +95,20 @@ export default function TargetsPage() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {plan.schedule.map((item, index) => (
-                                        <TableRow key={index}>
-                                            <TableCell>{item.day}</TableCell>
-                                            <TableCell>{item.date}</TableCell>
-                                            <TableCell>{item.topic}</TableCell>
-                                            <TableCell>{item.tasks}</TableCell>
-                                        </TableRow>
-                                        ))}
+                                        {plan.schedule.map((item, index) => {
+                                          const isCurrentDay = isToday(new Date(item.date));
+                                          return (
+                                            <TableRow 
+                                              key={index}
+                                              className={cn(isCurrentDay && "bg-primary/10")}
+                                            >
+                                                <TableCell className={cn(isCurrentDay && "font-bold text-primary")}>{item.day}</TableCell>
+                                                <TableCell className={cn(isCurrentDay && "font-bold text-primary")}>{item.date}</TableCell>
+                                                <TableCell>{item.topic}</TableCell>
+                                                <TableCell>{item.tasks}</TableCell>
+                                            </TableRow>
+                                          );
+                                        })}
                                     </TableBody>
                                     </Table>
                                 </CardContent>
@@ -108,7 +116,7 @@ export default function TargetsPage() {
                         </div>
                         <div>
                             <h3 className="text-lg font-bold flex items-center mb-2"><BookCopy className="mr-2" /> Introductory Notes</h3>
-                            <div className="prose prose-sm max-w-none bg-muted rounded-lg p-4 whitespace-pre-wrap prose-headings:font-semibold prose-a:text-primary hover:prose-a:underline" dangerouslySetInnerHTML={{ __html: plan.notes }} />
+                            <div className="prose prose-sm max-w-none bg-muted rounded-lg p-4 whitespace-pre-wrap prose-headings:font-semibold prose-a:text-primary hover:prose-a:underline" dangerouslySetInnerHTML={{ __html: plan.notes.replace(/\n/g, '<br />') }} />
                         </div>
                     </div>
                 </AccordionContent>
