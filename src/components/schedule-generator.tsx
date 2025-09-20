@@ -22,6 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { Badge } from "@/components/ui/badge";
 
 const formSchema = z.object({
   topic: z.string().min(5, { message: "Topic must be at least 5 characters." }),
@@ -110,6 +111,21 @@ export function ScheduleGenerator() {
   const suggestionClicked = (topic: string) => {
     form.setValue("topic", topic);
   };
+
+  // A simple markdown to HTML converter
+  const markdownToHtml = (markdown: string) => {
+    if (!markdown) return '';
+    return markdown
+      .replace(/### (.*)/g, '<h3 class="font-semibold text-lg mb-2 mt-4">$1</h3>') // h3
+      .replace(/## (.*)/g, '<h2 class="font-semibold text-xl mb-3 mt-5">$1</h2>')   // h2
+      .replace(/# (.*)/g, '<h1>$1</h1>')   // h1
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+      .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
+      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">$1</a>') // Links
+      .replace(/^- (.*)/gm, '<ul class="list-disc pl-5"><li>$1</li></ul>') // Basic lists (will wrap each item in a ul)
+      .replace(/<\/ul>\n<ul class="list-disc pl-5">/g, '') // Combine consecutive list items
+      .replace(/\n/g, '<br />'); // New lines
+  }
 
   return (
     <div className="w-full max-w-3xl text-center">
@@ -266,10 +282,10 @@ export function ScheduleGenerator() {
                       <TableHeader>
                         <TableRow>
                           <TableHead className="w-[80px]">Day</TableHead>
-                          <TableHead className="w-[150px]">Date</TableHead>
+                          <TableHead className="w-[120px]">Date</TableHead>
                           <TableHead>Topic</TableHead>
                           <TableHead>Tasks</TableHead>
-                          <TableHead>Status</TableHead>
+                          <TableHead className="w-[100px]">Status</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -279,7 +295,9 @@ export function ScheduleGenerator() {
                             <TableCell>{item.date}</TableCell>
                             <TableCell>{item.topic}</TableCell>
                             <TableCell>{item.tasks}</TableCell>
-                            <TableCell>Pending</TableCell>
+                            <TableCell>
+                                <Badge variant="secondary">Pending</Badge>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -289,7 +307,7 @@ export function ScheduleGenerator() {
             </div>
             <div>
                 <h2 className="text-2xl font-bold flex items-center mb-4"><BookCopy className="mr-3" /> Introductory Notes</h2>
-                <div className="prose prose-sm max-w-none bg-muted rounded-lg p-4 whitespace-pre-wrap prose-headings:font-semibold prose-a:text-primary hover:prose-a:underline" dangerouslySetInnerHTML={{ __html: result.notes.replace(/\n/g, '<br />') }} />
+                <div className="prose prose-sm max-w-none bg-muted rounded-lg p-4" dangerouslySetInnerHTML={{ __html: markdownToHtml(result.notes) }} />
             </div>
         </div>
       )}
