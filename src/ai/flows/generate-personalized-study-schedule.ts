@@ -25,8 +25,15 @@ export type GeneratePersonalizedStudyScheduleInput = z.infer<
   typeof GeneratePersonalizedStudyScheduleInputSchema
 >;
 
+const ScheduleItemSchema = z.object({
+  day: z.string().describe("The day number (e.g., 'Day 1')."),
+  date: z.string().describe("The date for the study session (e.g., '2024-07-29')."),
+  topic: z.string().describe("The sub-topic to be covered on this day."),
+  tasks: z.string().describe("A brief description of the tasks or goals for the day."),
+});
+
 const GeneratePersonalizedStudyScheduleOutputSchema = z.object({
-  schedule: z.string().describe('The generated study schedule, formatted as a markdown table.'),
+  schedule: z.array(ScheduleItemSchema).describe('The generated day-by-day study schedule.'),
   notes: z.string().describe('Introductory notes for the main topics in the study plan.'),
 });
 export type GeneratePersonalizedStudyScheduleOutput = z.infer<
@@ -53,7 +60,7 @@ const generatePersonalizedStudySchedulePrompt = ai.definePrompt({
   Language: {{{language}}}
 
   Instructions:
-  1.  **Create a Study Schedule**: Generate a day-by-day study plan for the specified duration. The schedule should be in a markdown table format with columns for "Day", "Date", "Topic", and "Tasks". Break down the main topic into smaller, manageable sub-topics for each day.
+  1.  **Create a Study Schedule**: Generate a day-by-day study plan for the specified duration. The schedule should be an array of objects, where each object contains "day", "date", "topic", and "tasks". Break down the main topic into smaller, manageable sub-topics for each day.
   2.  **Generate Introductory Notes**: For each of the main sub-topics identified in the schedule, create concise introductory notes. These notes should provide a brief overview, key concepts, and important definitions. This will serve as a starting point for the user's study sessions.
 
   Output the schedule and notes in the specified JSON format.

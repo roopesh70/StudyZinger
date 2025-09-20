@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent } from "@/components/ui/card";
 
 const formSchema = z.object({
   topic: z.string().min(5, { message: "Topic must be at least 5 characters." }),
@@ -217,7 +219,30 @@ export function ScheduleGenerator() {
         <div className="mt-12 text-left space-y-8">
             <div>
                 <h2 className="text-2xl font-bold flex items-center mb-4"><CalendarDays className="mr-3" /> Your Study Schedule</h2>
-                <div className="prose prose-sm max-w-none bg-muted rounded-lg p-4 overflow-x-auto" dangerouslySetInnerHTML={{ __html: result.schedule.replace(/\|/g, ' | ') }} />
+                <Card>
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[80px]">Day</TableHead>
+                          <TableHead className="w-[150px]">Date</TableHead>
+                          <TableHead>Topic</TableHead>
+                          <TableHead>Tasks</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {result.schedule.map((item, index) => (
+                          <TableRow key={index}>
+                            <TableCell>{item.day}</TableCell>
+                            <TableCell>{item.date}</TableCell>
+                            <TableCell>{item.topic}</TableCell>
+                            <TableCell>{item.tasks}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
             </div>
             <div>
                 <h2 className="text-2xl font-bold flex items-center mb-4"><BookCopy className="mr-3" /> Introductory Notes</h2>
