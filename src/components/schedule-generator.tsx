@@ -128,7 +128,7 @@ export function ScheduleGenerator() {
   }
 
   return (
-    <div className="w-full max-w-3xl text-center">
+    <div className="w-full max-w-3xl mx-auto text-center">
       <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">
         Craft your perfect study plan
       </h1>
