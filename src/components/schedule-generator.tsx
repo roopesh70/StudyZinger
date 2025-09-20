@@ -1,8 +1,7 @@
 
-
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -42,7 +41,12 @@ export function ScheduleGenerator() {
   const [result, setResult] = useState<GeneratePersonalizedStudyScheduleOutput | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -55,6 +59,16 @@ export function ScheduleGenerator() {
       language: "English",
     },
   });
+
+  useEffect(() => {
+    if (isClient) {
+      form.reset({
+        ...form.getValues(),
+        startDate: new Date(),
+      });
+    }
+  }, [isClient, form]);
+
 
   async function onSubmit(values: FormValues) {
     setLoading(true);
@@ -127,6 +141,10 @@ export function ScheduleGenerator() {
       .replace(/^- (.*)/gm, '<ul class="list-disc pl-5"><li>$1</li></ul>') // Basic lists (will wrap each item in a ul)
       .replace(/<\/ul>\n<ul class="list-disc pl-5">/g, '') // Combine consecutive list items
       .replace(/\n/g, '<br />'); // New lines
+  }
+
+  if (!isClient) {
+    return null; // or a loading skeleton
   }
 
   return (
@@ -316,3 +334,5 @@ export function ScheduleGenerator() {
     </div>
   );
 }
+
+    
