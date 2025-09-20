@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -9,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Loader2, Send } from "lucide-react";
+import { Loader2, Send, User, BrainCircuit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { ScrollArea } from "./ui/scroll-area";
@@ -85,8 +86,8 @@ export function AIChat() {
             {messages.map((message, index) => (
               <div key={index} className={`flex items-start gap-4 ${message.role === 'user' ? 'justify-end' : ''}`}>
                 {message.role === 'assistant' && (
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback>AI</AvatarFallback>
+                  <Avatar className="h-8 w-8 bg-primary text-primary-foreground">
+                    <AvatarFallback><BrainCircuit className="size-5" /></AvatarFallback>
                   </Avatar>
                 )}
                  <div className={`rounded-lg p-3 max-w-[80%] ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
@@ -98,15 +99,15 @@ export function AIChat() {
                 </div>
                  {message.role === 'user' && (
                    <Avatar className="h-8 w-8">
-                     <AvatarFallback>You</AvatarFallback>
+                     <AvatarFallback><User /></AvatarFallback>
                    </Avatar>
                  )}
               </div>
             ))}
              {loading && (
                 <div className="flex items-start gap-4">
-                    <Avatar className="h-8 w-8">
-                        <AvatarFallback>AI</AvatarFallback>
+                    <Avatar className="h-8 w-8 bg-primary text-primary-foreground">
+                        <AvatarFallback><BrainCircuit className="size-5" /></AvatarFallback>
                     </Avatar>
                     <div className="rounded-lg p-3 bg-muted">
                         <Loader2 className="h-5 w-5 animate-spin" />
