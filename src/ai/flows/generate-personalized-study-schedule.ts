@@ -12,18 +12,22 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GeneratePersonalizedStudyScheduleInputSchema = z.object({
-  subject: z.string().describe('The subject matter to study.'),
-  difficultyLevel: z
+  topic: z.string().describe('The topic to study.'),
+  duration: z.string().describe('The total duration of the study plan (e.g., "2 weeks", "1 month").'),
+  startDate: z.string().describe('The start date of the study plan.'),
+  dailyStudyTime: z.string().describe('The amount of time to study each day (e.g., "2 hours").'),
+  skillLevel: z
     .enum(['Beginner', 'Intermediate', 'Advanced'])
-    .describe('The difficulty level of the subject matter.'),
+    .describe('The skill level of the user.'),
+  language: z.string().describe('The preferred language for the study materials.'),
 });
 export type GeneratePersonalizedStudyScheduleInput = z.infer<
   typeof GeneratePersonalizedStudyScheduleInputSchema
 >;
 
 const GeneratePersonalizedStudyScheduleOutputSchema = z.object({
-  schedule: z.string().describe('The generated study schedule.'),
-  progress: z.string().describe('Progress summary of schedule generation.'),
+  schedule: z.string().describe('The generated study schedule, formatted as a markdown table.'),
+  notes: z.string().describe('Introductory notes for the main topics in the study plan.'),
 });
 export type GeneratePersonalizedStudyScheduleOutput = z.infer<
   typeof GeneratePersonalizedStudyScheduleOutputSchema
@@ -39,16 +43,20 @@ const generatePersonalizedStudySchedulePrompt = ai.definePrompt({
   name: 'generatePersonalizedStudySchedulePrompt',
   input: {schema: GeneratePersonalizedStudyScheduleInputSchema},
   output: {schema: GeneratePersonalizedStudyScheduleOutputSchema},
-  prompt: `You are an expert study schedule generator. Generate a personalized study schedule for the following subject and difficulty level:
+  prompt: `You are an expert study planner and note creator. Create a detailed, personalized study schedule and introductory notes based on the following user requirements.
 
-Subject: {{{subject}}}
-Difficulty Level: {{{difficultyLevel}}}
+  Topic: {{{topic}}}
+  Study Duration: {{{duration}}}
+  Start Date: {{{startDate}}}
+  Daily Study Time: {{{dailyStudyTime}}}
+  Skill Level: {{{skillLevel}}}
+  Language: {{{language}}}
 
-The study schedule should be detailed and easy to follow. It should include specific topics to study and the amount of time to spend on each topic. The schedule should change based on the difficulty that the user is facing with the material.
+  Instructions:
+  1.  **Create a Study Schedule**: Generate a day-by-day study plan for the specified duration. The schedule should be in a markdown table format with columns for "Day", "Date", "Topic", and "Tasks". Break down the main topic into smaller, manageable sub-topics for each day.
+  2.  **Generate Introductory Notes**: For each of the main sub-topics identified in the schedule, create concise introductory notes. These notes should provide a brief overview, key concepts, and important definitions. This will serve as a starting point for the user's study sessions.
 
-Make it no more than 7 days long.
-
-Schedule:
+  Output the schedule and notes in the specified JSON format.
 `,
 });
 
@@ -60,9 +68,6 @@ const generatePersonalizedStudyScheduleFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await generatePersonalizedStudySchedulePrompt(input);
-    return {
-      ...output!,
-      progress: 'Generated a personalized study schedule based on subject and difficulty.',
-    };
+    return output!;
   }
 );
