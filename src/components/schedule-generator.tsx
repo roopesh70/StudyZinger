@@ -278,7 +278,7 @@ export function ScheduleGenerator() {
                       </TableBody>
                     </Table>
                   </CardContent>
-                </card>
+                </Card>
             </div>
             <div>
                 <h2 className="text-2xl font-bold flex items-center mb-4"><BookCopy className="mr-3" /> Introductory Notes</h2>
