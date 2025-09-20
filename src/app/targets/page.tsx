@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, BookCopy, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, isToday } from "date-fns";
+import { isToday } from "date-fns";
 
 interface ScheduleItem {
   day: string;
@@ -59,6 +60,17 @@ export default function TargetsPage() {
     );
   }
 
+  // A simple markdown to HTML converter
+  const markdownToHtml = (markdown: string) => {
+    return markdown
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+      .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
+      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>') // Links
+      .replace(/^- (.*)/gm, '<ul><li>$1</li></ul>') // Basic lists (will wrap each item in a ul)
+      .replace(/<\/ul>\n<ul>/g, '') // Combine consecutive list items
+      .replace(/\n/g, '<br />'); // New lines
+  }
+  
   return (
     <main className="flex-1 p-4 md:p-6">
       <h1 className="text-2xl font-bold mb-6">Your Saved Study Targets</h1>
@@ -116,7 +128,7 @@ export default function TargetsPage() {
                         </div>
                         <div>
                             <h3 className="text-lg font-bold flex items-center mb-2"><BookCopy className="mr-2" /> Introductory Notes</h3>
-                            <div className="prose prose-sm max-w-none bg-muted rounded-lg p-4 whitespace-pre-wrap prose-headings:font-semibold prose-a:text-primary hover:prose-a:underline" dangerouslySetInnerHTML={{ __html: plan.notes.replace(/\n/g, '<br />') }} />
+                            <div className="prose prose-sm max-w-none bg-muted rounded-lg p-4 prose-headings:font-semibold prose-a:text-primary hover:prose-a:underline" dangerouslySetInnerHTML={{ __html: markdownToHtml(plan.notes) }} />
                         </div>
                     </div>
                 </AccordionContent>
