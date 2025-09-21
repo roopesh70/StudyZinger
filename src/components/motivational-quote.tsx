@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -11,9 +12,25 @@ export function MotivationalQuote() {
 
   useEffect(() => {
     async function fetchQuote() {
+      const today = new Date().toISOString().split('T')[0]; // Get date in YYYY-MM-DD format
+      const storedQuote = localStorage.getItem('dailyQuote');
+      const storedDate = localStorage.getItem('dailyQuoteDate');
+
+      if (storedQuote && storedDate === today) {
+        setQuote(storedQuote);
+        setLoading(false);
+        return;
+      }
+
       try {
         const result = await getDailyMotivationalQuote();
-        setQuote(result.quote);
+        if(result.quote) {
+          setQuote(result.quote);
+          localStorage.setItem('dailyQuote', result.quote);
+          localStorage.setItem('dailyQuoteDate', today);
+        } else {
+          setQuote("The journey of a thousand miles begins with a single step."); // Fallback quote
+        }
       } catch (error) {
         console.error("Failed to fetch motivational quote:", error);
         setQuote("The journey of a thousand miles begins with a single step."); // Fallback quote
