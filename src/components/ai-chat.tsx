@@ -35,20 +35,16 @@ const markdownToHtml = (markdown: string) => {
       .replace(/`(.*?)`/g, '<code class="bg-card px-1 rounded-md text-sm">$1</code>') // Inline code
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
       .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
-      .replace(/^- (.*)/gm, '<li>$1</li>') // Unordered list items
-      .replace(/^\* (.*)/gm, '<li>$1</li>'); // Unordered list items (alternative)
-  
-    // Wrap consecutive list items in a <ul>
-    html = html.replace(/<li>/g, '<ul><li>').replace(/<\/li>\n/g, '</li></ul>\n');
-    html = html.replace(/(<\/ul>\s*<ul>)/g, '');
-  
-    // Handle numbered lists
-    html = html.replace(/^\d+\. (.*)/gm, '<ol><li>$1</li></ol>');
-    html = html.replace(/(<\/ol>\s*<ol>)/g, '');
-  
+      .replace(/^- (.*)/gm, '<li>$1</li>')
+      .replace(/^\* (.*)/gm, '<li>$1</li>')
+      .replace(/^\d+\. (.*)/gm, '<li>$1</li>');
+
+    // Wrap consecutive list items in <ul> or <ol>
+    html = html.replace(/<li>(.*?)<\/li>/g, '</li><li>$1');
+    html = html.replace(/(<li>.*?<\/li>)/g, '<ul>$1</ul>');
+    html = html.replace(/<\/ul>\s*<ul>/g, '');
+
     html = html.replace(/\n/g, '<br />');
-    // Prevent double line breaks from list processing
-    html = html.replace(/<br \/>\s*<br \/>/g, '<br />');
     html = html.replace(/<\/li><br \/>/g, '</li>');
     
     return html;

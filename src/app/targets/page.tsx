@@ -47,16 +47,26 @@ interface StudyPlan {
 // A simple markdown to HTML converter
 const markdownToHtml = (markdown: string) => {
   if (!markdown) return '';
-  return markdown
+  let html = markdown
     .replace(/### (.*)/g, '<h3 class="font-semibold text-lg mb-2 mt-4">$1</h3>') // h3
     .replace(/## (.*)/g, '<h2 class="font-semibold text-xl mb-3 mt-5">$1</h2>')   // h2
     .replace(/# (.*)/g, '<h1>$1</h1>')   // h1
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
     .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
     .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">$1</a>') // Links
-    .replace(/^- (.*)/gm, '<ul class="list-disc pl-5"><li>$1</li></ul>') // Basic lists (will wrap each item in a ul)
-    .replace(/<\/ul>\n<ul class="list-disc pl-5">/g, '') // Combine consecutive list items
-    .replace(/\n/g, '<br />'); // New lines
+    .replace(/^- (.*)/gm, '<li>$1</li>')
+    .replace(/^\* (.*)/gm, '<li>$1</li>')
+    .replace(/^\d+\. (.*)/gm, '<li>$1</li>');
+
+  // Wrap consecutive list items in <ul> or <ol>
+  html = html.replace(/<li>(.*?)<\/li>/g, '</li><li>$1');
+  html = html.replace(/(<li>.*?<\/li>)/g, '<ul>$1</ul>');
+  html = html.replace(/<\/ul>\s*<ul>/g, '');
+
+  html = html.replace(/\n/g, '<br />');
+  html = html.replace(/<\/li><br \/>/g, '</li>');
+  
+  return html;
 }
 
 
