@@ -30,22 +30,23 @@ const markdownToHtml = (markdown: string) => {
     let html = markdown
       .replace(/```([\s\S]*?)```/g, (match, code) => {
           const escapedCode = code.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-          return `<pre class="bg-card p-2 rounded-md my-2 text-sm"><code>${escapedCode}</code></pre>`;
+          return `<pre class="bg-muted border text-foreground p-3 rounded-md my-2 text-sm overflow-x-auto"><code>${escapedCode}</code></pre>`;
       })
-      .replace(/`(.*?)`/g, '<code class="bg-card px-1 rounded-md text-sm">$1</code>') // Inline code
+      .replace(/`([^`]+)`/g, '<code class="bg-muted text-foreground px-1.5 py-1 rounded-md text-sm">$1</code>') // Inline code
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
       .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
-      .replace(/^- (.*)/gm, '<li>$1</li>')
-      .replace(/^\* (.*)/gm, '<li>$1</li>')
-      .replace(/^\d+\. (.*)/gm, '<li>$1</li>');
+      .replace(/^(?:-|\*)\s(.*)/gm, '<li>$1</li>')
+      .replace(/^\d+\.\s(.*)/gm, '<li>$1</li>');
 
     // Wrap consecutive list items in <ul> or <ol>
-    html = html.replace(/<li>(.*?)<\/li>/g, '</li><li>$1');
-    html = html.replace(/(<li>.*?<\/li>)/g, '<ul>$1</ul>');
+    html = html.replace(/<\/li>\s*<li>/g, '</li><li>');
+    html = html.replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>');
     html = html.replace(/<\/ul>\s*<ul>/g, '');
 
     html = html.replace(/\n/g, '<br />');
     html = html.replace(/<\/li><br \/>/g, '</li>');
+    html = html.replace(/<br \/>\s*<ul>/g, '<ul>');
+    html = html.replace(/<\/ul><br \/>/g, '</ul>');
     
     return html;
 }
@@ -105,7 +106,7 @@ export function AIChat() {
                 )}
                  <div className={`rounded-lg p-3 max-w-[80%] ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                   {message.role === 'assistant' ? (
-                     <div className="prose prose-sm max-w-none prose-pre:bg-background prose-code:text-primary" dangerouslySetInnerHTML={{ __html: markdownToHtml(message.content) }} />
+                     <div className="prose prose-sm max-w-none prose-pre:bg-transparent prose-pre:p-0 prose-pre:border-0" dangerouslySetInnerHTML={{ __html: markdownToHtml(message.content) }} />
                   ) : (
                      <p>{message.content}</p>
                   )}
