@@ -39,8 +39,8 @@ const markdownToHtml = (markdown: string) => {
       .replace(/^\d+\.\s(.*)/gm, '<li>$1</li>');
 
     // Wrap consecutive list items in <ul> or <ol>
-    html = html.replace(/<\/li>\s*<li>/g, '</li><li>');
-    html = html.replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>');
+    html = html.replace(/<li>(.*?)<\/li>/g, '</li><li>$1');
+    html = html.replace(/(<li>.*?<\/li>)/g, '<ul>$1</ul>');
     html = html.replace(/<\/ul>\s*<ul>/g, '');
 
     html = html.replace(/\n/g, '<br />');
