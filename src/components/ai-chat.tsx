@@ -27,26 +27,26 @@ interface Message {
 // Simple markdown to HTML renderer
 const markdownToHtml = (markdown: string) => {
     if (!markdown) return '';
-    let html = markdown
-      .replace(/```([\s\S]*?)```/g, (match, code) => {
-          const escapedCode = code.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-          return `<pre class="bg-muted border text-foreground p-3 rounded-md my-2 text-sm overflow-x-auto"><code>${escapedCode}</code></pre>`;
-      })
-      .replace(/`([^`]+)`/g, '<code class="bg-muted text-foreground px-1.5 py-1 rounded-md text-sm">$1</code>') // Inline code
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
-      .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
+    
+    let html = markdown.replace(/```([\s\S]*?)```/g, (match, code) => {
+        const escapedCode = code.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        return `<pre class="bg-card border text-card-foreground p-3 rounded-md my-2 text-sm overflow-x-auto"><code>${escapedCode}</code></pre>`;
+    });
+    
+    html = html.replace(/`([^`]+)`/g, '<code class="bg-muted text-foreground px-1.5 py-1 rounded-md text-sm">$1</code>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/^(?:-|\*)\s(.*)/gm, '<li>$1</li>')
       .replace(/^\d+\.\s(.*)/gm, '<li>$1</li>');
 
-    // Wrap consecutive list items in <ul> or <ol>
-    html = html.replace(/<li>(.*?)<\/li>/g, '</li><li>$1');
-    html = html.replace(/(<li>.*?<\/li>)/g, '<ul>$1</ul>');
+    html = html.replace(/((?:<li>.*?<\/li>\s*)+)/g, '<ul>$1</ul>');
     html = html.replace(/<\/ul>\s*<ul>/g, '');
 
     html = html.replace(/\n/g, '<br />');
     html = html.replace(/<\/li><br \/>/g, '</li>');
     html = html.replace(/<br \/>\s*<ul>/g, '<ul>');
     html = html.replace(/<\/ul><br \/>/g, '</ul>');
+    html = html.replace(/<pre.*?><br \/>/g, '<pre>');
     
     return html;
 }
@@ -98,32 +98,36 @@ export function AIChat() {
         <ScrollArea className="flex-1 pr-4 -mr-4">
           <div className="space-y-6">
             {messages.map((message, index) => (
-              <div key={index} className={`flex items-start gap-4 ${message.role === 'user' ? 'justify-end' : ''}`}>
+              <div key={index} className={`flex items-start gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}>
                 {message.role === 'assistant' && (
-                  <Avatar className="h-8 w-8 bg-primary text-primary-foreground">
-                    <AvatarFallback className="font-bold text-sm">AI</AvatarFallback>
+                  <Avatar className="h-9 w-9 border-2 border-primary">
+                     <AvatarFallback className="bg-primary text-primary-foreground">
+                        <BrainCircuit className="h-5 w-5" />
+                     </AvatarFallback>
                   </Avatar>
                 )}
-                 <div className={`rounded-lg p-3 max-w-[80%] ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                 <div className={`rounded-lg px-4 py-3 max-w-[80%] ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted border'}`}>
                   {message.role === 'assistant' ? (
-                     <div className="prose prose-sm max-w-none prose-pre:bg-transparent prose-pre:p-0 prose-pre:border-0" dangerouslySetInnerHTML={{ __html: markdownToHtml(message.content) }} />
+                     <div className="prose prose-sm max-w-none prose-pre:bg-card prose-pre:p-0" dangerouslySetInnerHTML={{ __html: markdownToHtml(message.content) }} />
                   ) : (
                      <p>{message.content}</p>
                   )}
                 </div>
                  {message.role === 'user' && (
-                   <Avatar className="h-8 w-8">
+                   <Avatar className="h-9 w-9">
                      <AvatarFallback><User /></AvatarFallback>
                    </Avatar>
                  )}
               </div>
             ))}
              {loading && (
-                <div className="flex items-start gap-4">
-                    <Avatar className="h-8 w-8 bg-primary text-primary-foreground">
-                        <AvatarFallback className="font-bold text-sm">AI</AvatarFallback>
+                <div className="flex items-start gap-3">
+                    <Avatar className="h-9 w-9 border-2 border-primary">
+                        <AvatarFallback className="bg-primary text-primary-foreground">
+                            <BrainCircuit className="h-5 w-5" />
+                        </AvatarFallback>
                     </Avatar>
-                    <div className="rounded-lg p-3 bg-muted">
+                    <div className="rounded-lg p-3 bg-muted border">
                         <Loader2 className="h-5 w-5 animate-spin" />
                     </div>
                 </div>
