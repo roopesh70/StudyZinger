@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { ThemeToggle } from "../theme-toggle";
 
 const titles: { [key: string]: string } = {
   "/": "Home",
@@ -21,6 +22,8 @@ export function Header() {
         <SidebarTrigger />
       </div>
       <h1 className="text-xl font-semibold md:text-2xl">{title}</h1>
+      <div className="flex-grow" />
+      <ThemeToggle />
     </header>
   );
 }
