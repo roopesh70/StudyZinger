@@ -30,8 +30,8 @@ export function SidebarNav() {
     <>
       <SidebarHeader>
         <Link href="/" className="flex items-center gap-2">
-          <BrainCircuit className="size-6 text-sidebar-primary" />
-          <h1 className="text-2xl font-headline font-bold text-sidebar-primary">ZINGER</h1>
+          <BrainCircuit className="size-6 text-sky-300" />
+          <h1 className="text-2xl font-headline font-bold text-sky-300">ZINGER</h1>
         </Link>
       </SidebarHeader>
       <SidebarContent>
