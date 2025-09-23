@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Loader2, Send, User, BrainCircuit } from "lucide-react";
+import { Loader2, Send, User, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { ScrollArea } from "./ui/scroll-area";
@@ -102,7 +102,7 @@ export function AIChat() {
                 {message.role === 'assistant' && (
                   <Avatar className="h-9 w-9 border-2 border-primary">
                      <AvatarFallback className="bg-primary text-primary-foreground">
-                        <BrainCircuit className="h-5 w-5" />
+                        <MessageSquare className="h-5 w-5" />
                      </AvatarFallback>
                   </Avatar>
                 )}
@@ -124,7 +124,7 @@ export function AIChat() {
                 <div className="flex items-start gap-3">
                     <Avatar className="h-9 w-9 border-2 border-primary">
                         <AvatarFallback className="bg-primary text-primary-foreground">
-                            <BrainCircuit className="h-5 w-5" />
+                            <MessageSquare className="h-5 w-5" />
                         </AvatarFallback>
                     </Avatar>
                     <div className="rounded-lg p-3 bg-muted border">

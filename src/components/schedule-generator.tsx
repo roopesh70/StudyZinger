@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, ArrowRight, BookCopy, CalendarDays, Clock, Languages, BrainCircuit, Save } from "lucide-react";
+import { Calendar as CalendarIcon, ArrowRight, BookCopy, CalendarDays, Clock, Languages, GraduationCap, Save } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -195,7 +195,7 @@ export function ScheduleGenerator() {
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl>
                                     <SelectTrigger className="border-0 shadow-none bg-accent text-accent-foreground hover:bg-accent/80 focus:ring-0">
-                                        <BrainCircuit className="size-4 mr-2" />
+                                        <GraduationCap className="size-4 mr-2" />
                                         <SelectValue placeholder="Select skill level" />
                                     </SelectTrigger>
                                 </FormControl>
