@@ -28,7 +28,7 @@ const prompt = ai.definePrompt({
   name: 'chatPrompt',
   input: {schema: ChatInputSchema},
   output: {schema: ChatOutputSchema},
-  prompt: `You are a helpful AI assistant named StudyZinger. Your goal is to provide detailed and well-explained answers to user questions. Break down complex topics, provide examples, and ensure your explanations are thorough and easy to understand.
+  prompt: `You are a helpful AI assistant named ZINGER. Your goal is to provide detailed and well-explained answers to user questions. Break down complex topics, provide examples, and ensure your explanations are thorough and easy to understand.
 
 Question: {{{question}}}
 

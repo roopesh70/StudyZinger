@@ -53,7 +53,7 @@ const mailjetSend = ai.defineTool(
         {
           From: {
             Email: 'you@example.com', // Replace with a verified sender email
-            Name: 'StudyZinger',
+            Name: 'ZINGER',
           },
           To: [
             {
@@ -85,7 +85,7 @@ const prompt = ai.definePrompt({
     name: 'dailySummaryPrompt',
     input: {schema: SendDailySummaryInputSchema},
     tools: [mailjetSend],
-    prompt: `You are an AI assistant for the StudyZinger app. Your task is to send a daily summary email to the user with their tasks for the day.
+    prompt: `You are an AI assistant for the ZINGER app. Your task is to send a daily summary email to the user with their tasks for the day.
 
 User Name: {{{name}}}
 User Email: {{{email}}}
