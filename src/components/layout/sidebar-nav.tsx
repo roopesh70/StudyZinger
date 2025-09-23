@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Home, LineChart, BrainCircuit, Target, MessageSquare } from "lucide-react";
+import { BookOpen, Home, LineChart, Target, MessageSquare } from "lucide-react";
 
 import {
   SidebarHeader,

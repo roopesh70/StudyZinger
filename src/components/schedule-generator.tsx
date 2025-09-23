@@ -112,7 +112,8 @@ export function ScheduleGenerator() {
         title: "Success!",
         description: "Your study plan has been saved to Targets.",
       });
-    } catch (error) {
+    } catch (error)
+{
       console.error("Error saving document: ", error);
       toast({
         variant: "destructive",
