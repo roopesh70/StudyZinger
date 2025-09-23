@@ -14,6 +14,7 @@ import {
   SidebarFooter
 } from "@/components/ui/sidebar";
 import { MotivationalQuote } from "@/components/motivational-quote";
+import { GraduationCap } from "lucide-react";
 
 const links = [
   { href: "/", label: "Home", icon: Home },
@@ -30,8 +31,8 @@ export function SidebarNav() {
     <>
       <SidebarHeader>
         <Link href="/" className="flex items-center gap-2">
-          <BrainCircuit className="size-6 text-sky-300" />
-          <h1 className="text-2xl font-headline font-bold text-sky-300">ZINGER</h1>
+          <GraduationCap className="size-8 text-accent" />
+          <h1 className="text-2xl font-headline font-bold text-white">ZINGER</h1>
         </Link>
       </SidebarHeader>
       <SidebarContent>
@@ -42,6 +43,7 @@ export function SidebarNav() {
                 asChild
                 isActive={pathname === link.href}
                 className="w-full"
+                tooltip={link.label}
               >
                 <Link href={link.href}>
                   <link.icon className="size-4" />

@@ -131,24 +131,34 @@ export function ScheduleGenerator() {
   // A simple markdown to HTML converter
   const markdownToHtml = (markdown: string) => {
     if (!markdown) return '';
-    let html = markdown
-      .replace(/### (.*)/g, '<h3 class="font-semibold text-lg mb-2 mt-4">$1</h3>') // h3
-      .replace(/## (.*)/g, '<h2 class="font-semibold text-xl mb-3 mt-5">$1</h2>') // h2
-      .replace(/# (.*)/g, '<h1>$1</h1>') // h1
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
-      .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
-      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">$1</a>') // Links
-      .replace(/^- (.*)/gm, '<li>$1</li>')
-      .replace(/^\* (.*)/gm, '<li>$1</li>')
-      .replace(/^\d+\. (.*)/gm, '<li>$1</li>');
-
-    // Wrap consecutive list items in <ul> or <ol>
-    html = html.replace(/<li>(.*?)<\/li>/g, '</li><li>$1');
-    html = html.replace(/(<li>.*?<\/li>)/g, '<ul>$1</ul>');
-    html = html.replace(/<\/ul>\s*<ul>/g, '');
-
+    
+    let html = markdown.replace(/```([\s\S]*?)```/g, (match, code) => {
+        const escapedCode = code.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        return `<pre class="bg-card border text-card-foreground p-3 rounded-md my-2 text-sm overflow-x-auto"><code>${escapedCode}</code></pre>`;
+    });
+    
+    html = html.replace(/`([^`]+)`/g, '<code class="bg-muted text-foreground px-1.5 py-1 rounded-md text-sm">$1</code>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    
+    // Process lists
+    html = html.replace(/^\s*([*-]|\d+\.)\s/gm, '<li>');
+    html = html.replace(/<\/li><li>/g, '</li>\n<li>');
+    html = html.replace(/(<li>.*<\/li>)/gs, (match) => {
+        if (match.startsWith('<li>')) {
+            return `<ul>${match.replace(/\n/g, '')}</ul>`;
+        }
+        return match;
+    });
+     html = html.replace(/<\/ul>\s?<ul>/g, '');
+    
     html = html.replace(/\n/g, '<br />');
     html = html.replace(/<\/li><br \/>/g, '</li>');
+    html = html.replace(/<br \/>\s*<ul>/g, '<ul>');
+    html = html.replace(/<\/ul><br \/>/g, '</ul>');
+    html = html.replace(/<pre.*?><br \/>/g, '<pre>');
+    html = html.replace(/<br \/>/g, '\n');
+    html = html.replace(/\n/g, '<br />');
 
     return html;
   }
@@ -178,7 +188,7 @@ export function ScheduleGenerator() {
                       <FormControl>
                         <Textarea
                           placeholder="I want to learn about Quantum Computing..."
-                          className="text-base border-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-24 resize-none shadow-none p-2"
+                          className="text-lg bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-24 resize-none shadow-none p-2"
                           {...field}
                         />
                       </FormControl>
@@ -186,7 +196,7 @@ export function ScheduleGenerator() {
                     </FormItem>
                   )}
                 />
-                <div className="flex flex-wrap gap-2 pt-2 border-t mt-2">
+                <div className="flex flex-wrap gap-2 pt-2 border-t mt-2 items-center">
                     <FormField
                       control={form.control}
                       name="skillLevel"
@@ -194,7 +204,7 @@ export function ScheduleGenerator() {
                         <FormItem>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl>
-                                    <SelectTrigger className="border-0 shadow-none bg-accent text-accent-foreground hover:bg-accent/80 focus:ring-0">
+                                    <SelectTrigger className="border-0 shadow-none bg-background text-foreground hover:bg-muted focus:ring-0 h-8">
                                         <GraduationCap className="size-4 mr-2" />
                                         <SelectValue placeholder="Select skill level" />
                                     </SelectTrigger>
@@ -209,7 +219,7 @@ export function ScheduleGenerator() {
                       )}
                     />
                     <div className="flex-grow" />
-                    <Button type="submit" size="icon" className="rounded-full" disabled={loading}>
+                    <Button type="submit" size="icon" className="rounded-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={loading}>
                         {loading ? <Loader2 className="animate-spin" /> : <ArrowRight />}
                     </Button>
                 </div>
@@ -221,8 +231,8 @@ export function ScheduleGenerator() {
                   name="duration"
                   render={({ field }) => (
                     <FormItem>
-                        <label className="text-sm font-medium text-muted-foreground flex items-center mb-1"><CalendarDays className="mr-2" /> Duration</label>
-                        <FormControl><Input {...field} /></FormControl>
+                        <label className="text-xs font-medium text-muted-foreground flex items-center mb-1"><CalendarDays className="mr-2 h-3.5 w-3.5" /> Duration</label>
+                        <FormControl><Input {...field} className="bg-card border-0" /></FormControl>
                         <FormMessage />
                     </FormItem>
                   )}
@@ -232,8 +242,8 @@ export function ScheduleGenerator() {
                   name="dailyStudyTime"
                   render={({ field }) => (
                     <FormItem>
-                        <label className="text-sm font-medium text-muted-foreground flex items-center mb-1"><Clock className="mr-2" /> Daily Study</label>
-                        <FormControl><Input {...field} /></FormControl>
+                        <label className="text-xs font-medium text-muted-foreground flex items-center mb-1"><Clock className="mr-2 h-3.5 w-3.5" /> Daily Study</label>
+                        <FormControl><Input {...field} className="bg-card border-0" /></FormControl>
                         <FormMessage />
                     </FormItem>
                   )}
@@ -243,14 +253,14 @@ export function ScheduleGenerator() {
                   name="startDate"
                   render={({ field }) => (
                     <FormItem>
-                        <label className="text-sm font-medium text-muted-foreground flex items-center mb-1"><CalendarIcon className="mr-2" /> Start Date</label>
+                        <label className="text-xs font-medium text-muted-foreground flex items-center mb-1"><CalendarIcon className="mr-2 h-3.5 w-3.5" /> Start Date</label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <FormControl>
                                 <Button
                                     variant={"outline"}
                                     className={cn(
-                                    "w-full justify-start text-left font-normal",
+                                    "w-full justify-start text-left font-normal bg-card border-0",
                                     !field.value && "text-muted-foreground"
                                     )}
                                 >
@@ -271,8 +281,8 @@ export function ScheduleGenerator() {
                   name="language"
                   render={({ field }) => (
                     <FormItem>
-                        <label className="text-sm font-medium text-muted-foreground flex items-center mb-1"><Languages className="mr-2" /> Language</label>
-                        <FormControl><Input {...field} /></FormControl>
+                        <label className="text-xs font-medium text-muted-foreground flex items-center mb-1"><Languages className="mr-2 h-3.5 w-3.5" /> Language</label>
+                        <FormControl><Input {...field} className="bg-card border-0"/></FormControl>
                         <FormMessage />
                     </FormItem>
                   )}
@@ -283,15 +293,15 @@ export function ScheduleGenerator() {
       </div>
       
       <div className="mt-8 flex flex-wrap justify-center gap-2">
-        <Button variant="outline" size="sm" onClick={() => suggestionClicked("Learn Next.js App Router")}>Learn Next.js</Button>
-        <Button variant="outline" size="sm" onClick={() => suggestionClicked("Master Python for Data Science")}>Python for Data Science</Button>
-        <Button variant="outline" size="sm" onClick={() => suggestionClicked("The History of the Roman Empire")}>Roman Empire History</Button>
-        <Button variant="outline" size="sm" onClick={() => suggestionClicked("Introduction to Organic Chemistry")}>Organic Chemistry</Button>
+        <Button variant="secondary" size="sm" onClick={() => suggestionClicked("Learn Next.js App Router")}>Learn Next.js</Button>
+        <Button variant="secondary" size="sm" onClick={() => suggestionClicked("Master Python for Data Science")}>Python for Data Science</Button>
+        <Button variant="secondary" size="sm" onClick={() => suggestionClicked("The History of the Roman Empire")}>Roman Empire History</Button>
+        <Button variant="secondary" size="sm" onClick={() => suggestionClicked("Introduction to Organic Chemistry")}>Organic Chemistry</Button>
       </div>
 
       {loading && (
         <div className="mt-12 text-center">
-            <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
+            <Loader2 className="mx-auto h-12 w-12 animate-spin text-accent" />
             <p className="mt-4 text-muted-foreground">Generating your plan...</p>
         </div>
       )}
