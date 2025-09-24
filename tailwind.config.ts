@@ -12,6 +12,7 @@ export default {
       fontFamily: {
         body: ['Inter', 'sans-serif'],
         headline: ['Assistant', 'sans-serif'],
+        script: ['"Lovers Quarrel"', 'cursive'],
         code: ['monospace'],
       },
       colors: {
