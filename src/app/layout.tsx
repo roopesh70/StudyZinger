@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from '@/components/theme-provider';
 
 export const metadata: Metadata = {
-  title: 'ZINGER',
+  title: 'zinger',
   description: 'Your personalized AI-powered study partner.',
 };
 

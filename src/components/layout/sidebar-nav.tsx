@@ -32,7 +32,7 @@ export function SidebarNav() {
       <SidebarHeader>
         <Link href="/" className="flex items-center gap-2">
           <GraduationCap className="size-8 text-accent" />
-          <h1 className="font-script text-4xl text-white">ZINGER</h1>
+          <h1 className="font-script text-4xl text-white">zinger</h1>
         </Link>
       </SidebarHeader>
       <SidebarContent>
