@@ -27,6 +27,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ScheduleItem {
   day: string;
@@ -327,82 +328,86 @@ export default function TargetsPage() {
                    </div>
                 </AccordionTrigger>
                 <AccordionContent>
-                    <div className="px-6 pb-6 space-y-6">
-                        <div>
-                            <h3 className="text-lg font-bold flex items-center mb-2"><CalendarDays className="mr-2" /> Study Schedule</h3>
-                             <Card>
-                                <CardContent className="p-0">
-                                    <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                        <TableHead className="w-[80px]">Day</TableHead>
-                                        <TableHead className="w-[120px]">Date</TableHead>
-                                        <TableHead>Topic</TableHead>
-                                        <TableHead>Tasks</TableHead>
-                                        <TableHead className="w-[100px]">Status</TableHead>
-                                        <TableHead className="w-[120px]">Action</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {plan.schedule.map((item, index) => {
-                                          const isCurrentDay = isToday(parseISO(item.date));
-                                          const isItemUpdating = updating[`${plan.id}-${item.date}`];
-                                          return (
-                                            <TableRow 
-                                              key={index}
-                                              className={cn(isCurrentDay && "bg-primary/10")}
-                                            >
-                                                <TableCell className={cn(isCurrentDay && "font-bold text-primary")}>{item.day}</TableCell>
-                                                <TableCell className={cn(isCurrentDay && "font-bold text-primary")}>{item.date}</TableCell>
-                                                <TableCell>{item.topic}</TableCell>
-                                                <TableCell>{item.tasks}</TableCell>
-                                                <TableCell>
-                                                  <Badge variant={statusColors[item.status]} className="capitalize">
-                                                    {item.status}
-                                                  </Badge>
-                                                </TableCell>
-                                                <TableCell>
-                                                  {item.status !== 'completed' ? (
-                                                    <Button 
-                                                      size="sm" 
-                                                      variant="outline"
-                                                      onClick={() => handleUpdateStatus(plan.id, item.date, 'completed')}
-                                                      disabled={isItemUpdating}
-                                                    >
-                                                      {isItemUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                                      Done
-                                                    </Button>
-                                                  ) : (
-                                                    <Button 
-                                                      size="sm" 
-                                                      variant="secondary"
-                                                      onClick={() => handleUpdateStatus(plan.id, item.date, 'pending')}
-                                                      disabled={isItemUpdating}
-                                                    >
-                                                       {isItemUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                                      Undo
-                                                    </Button>
-                                                  )}
-                                                </TableCell>
+                    <div className="px-6 pb-6">
+                        <Tabs defaultValue="schedule">
+                            <TabsList className="mb-4">
+                                <TabsTrigger value="schedule"><CalendarDays className="mr-2 h-4 w-4" />Schedule</TabsTrigger>
+                                {todaysTopic && <TabsTrigger value="today"><Edit className="mr-2 h-4 w-4" />Today's Notes</TabsTrigger>}
+                                <TabsTrigger value="intro"><BookCopy className="mr-2 h-4 w-4" />Intro Notes</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="schedule">
+                                <Card>
+                                    <CardContent className="p-0">
+                                        <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                            <TableHead className="w-[80px]">Day</TableHead>
+                                            <TableHead className="w-[120px]">Date</TableHead>
+                                            <TableHead>Topic</TableHead>
+                                            <TableHead>Tasks</TableHead>
+                                            <TableHead className="w-[100px]">Status</TableHead>
+                                            <TableHead className="w-[120px]">Action</TableHead>
                                             </TableRow>
-                                          );
-                                        })}
-                                    </TableBody>
-                                    </Table>
-                                </CardContent>
-                             </Card>
-                        </div>
-                        {todaysTopic && (
-                          <div>
-                            <h3 className="text-lg font-bold flex items-center mb-2"><Edit className="mr-2" /> Today's Notes</h3>
-                            <TodayNotes topic={todaysTopic} />
-                          </div>
-                        )}
-                        <div>
-                            <h3 className="text-lg font-bold flex items-center mb-2"><BookCopy className="mr-2" /> Introductory Notes</h3>
-                            <div className="prose prose-sm max-w-none bg-muted rounded-lg p-4 prose-h2:text-primary prose-h3:text-primary prose-a:text-primary hover:prose-a:underline" dangerouslySetInnerHTML={{ __html: markdownToHtml(plan.notes) }} />
-                        </div>
-                        <div className="flex items-center space-x-2 pt-4 border-t">
+                                        </TableHeader>
+                                        <TableBody>
+                                            {plan.schedule.map((item, index) => {
+                                            const isCurrentDay = isToday(parseISO(item.date));
+                                            const isItemUpdating = updating[`${plan.id}-${item.date}`];
+                                            return (
+                                                <TableRow 
+                                                key={index}
+                                                className={cn(isCurrentDay && "bg-primary/10")}
+                                                >
+                                                    <TableCell className={cn(isCurrentDay && "font-bold text-primary")}>{item.day}</TableCell>
+                                                    <TableCell className={cn(isCurrentDay && "font-bold text-primary")}>{item.date}</TableCell>
+                                                    <TableCell>{item.topic}</TableCell>
+                                                    <TableCell>{item.tasks}</TableCell>
+                                                    <TableCell>
+                                                    <Badge variant={statusColors[item.status]} className="capitalize">
+                                                        {item.status}
+                                                    </Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                    {item.status !== 'completed' ? (
+                                                        <Button 
+                                                        size="sm" 
+                                                        variant="outline"
+                                                        onClick={() => handleUpdateStatus(plan.id, item.date, 'completed')}
+                                                        disabled={isItemUpdating}
+                                                        >
+                                                        {isItemUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                        Done
+                                                        </Button>
+                                                    ) : (
+                                                        <Button 
+                                                        size="sm" 
+                                                        variant="secondary"
+                                                        onClick={() => handleUpdateStatus(plan.id, item.date, 'pending')}
+                                                        disabled={isItemUpdating}
+                                                        >
+                                                        {isItemUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                        Undo
+                                                        </Button>
+                                                    )}
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                            })}
+                                        </TableBody>
+                                        </Table>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+                            {todaysTopic && (
+                            <TabsContent value="today">
+                                <TodayNotes topic={todaysTopic} />
+                            </TabsContent>
+                            )}
+                            <TabsContent value="intro">
+                                <div className="prose prose-sm max-w-none bg-muted rounded-lg p-4 prose-h2:text-primary prose-h3:text-primary prose-a:text-primary hover:prose-a:underline" dangerouslySetInnerHTML={{ __html: markdownToHtml(plan.notes) }} />
+                            </TabsContent>
+                        </Tabs>
+                         <div className="flex items-center space-x-2 pt-6 border-t mt-6">
                             <Switch 
                                 id={`auto-delete-${plan.id}`}
                                 checked={!!plan.autoDeleteOnCompletion}
