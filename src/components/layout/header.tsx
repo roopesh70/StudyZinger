@@ -18,7 +18,7 @@ export function Header() {
   const title = titles[pathname] || "Dashboard";
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-md md:px-6">
+    <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-lg md:px-6">
       <div className="md:hidden">
         <SidebarTrigger />
       </div>
