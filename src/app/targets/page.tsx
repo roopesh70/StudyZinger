@@ -360,7 +360,7 @@ export default function TargetsPage() {
                         )}
                         <div>
                             <h3 className="text-lg font-bold flex items-center mb-2"><BookCopy className="mr-2" /> Introductory Notes</h3>
-                            <div className="prose prose-sm max-w-none bg-muted rounded-lg p-4 prose-headings:font-semibold prose-a:text-primary hover:prose-a:underline" dangerouslySetInnerHTML={{ __html: markdownToHtml(plan.notes) }} />
+                            <div className="prose prose-sm max-w-none bg-muted rounded-lg p-4 prose-h2:text-primary prose-h3:text-primary prose-a:text-primary hover:prose-a:underline" dangerouslySetInnerHTML={{ __html: markdownToHtml(plan.notes) }} />
                         </div>
                         <div className="flex items-center space-x-2 pt-4 border-t">
                             <Switch 

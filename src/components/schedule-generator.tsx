@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, ArrowRight, BookCopy, CalendarDays, Clock, Languages, GraduationCap, Save } from "lucide-react";
+import { Calendar as CalendarIcon, ArrowRight, BookCopy, CalendarDays, Clock, Languages, BrainCircuit, Save } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -206,7 +206,7 @@ export function ScheduleGenerator() {
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl>
                                     <SelectTrigger className="border-0 shadow-none bg-background text-foreground hover:bg-muted focus:ring-0 h-8">
-                                        <GraduationCap className="size-4 mr-2" />
+                                        <BrainCircuit className="size-4 mr-2" />
                                         <SelectValue placeholder="Select skill level" />
                                     </SelectTrigger>
                                 </FormControl>
@@ -294,10 +294,10 @@ export function ScheduleGenerator() {
       </div>
       
       <div className="mt-8 flex flex-wrap justify-center gap-2">
-        <Button variant="outline" size="sm" onClick={() => suggestionClicked("Learn Next.js App Router")}>Learn Next.js</Button>
-        <Button variant="outline" size="sm" onClick={() => suggestionClicked("Master Python for Data Science")}>Python for Data Science</Button>
-        <Button variant="outline" size="sm" onClick={() => suggestionClicked("The History of the Roman Empire")}>Roman Empire History</Button>
-        <Button variant="outline" size="sm" onClick={() => suggestionClicked("Introduction to Organic Chemistry")}>Organic Chemistry</Button>
+        <Button variant="default" size="sm" onClick={() => suggestionClicked("Learn Next.js App Router")}>Learn Next.js</Button>
+        <Button variant="default" size="sm" onClick={() => suggestionClicked("Master Python for Data Science")}>Python for Data Science</Button>
+        <Button variant="default" size="sm" onClick={() => suggestionClicked("The History of the Roman Empire")}>Roman Empire History</Button>
+        <Button variant="default" size="sm" onClick={() => suggestionClicked("Introduction to Organic Chemistry")}>Organic Chemistry</Button>
       </div>
 
       {loading && (
@@ -348,7 +348,7 @@ export function ScheduleGenerator() {
             </div>
             <div>
                 <h2 className="text-2xl font-bold flex items-center mb-4"><BookCopy className="mr-3" /> Introductory Notes</h2>
-                <div className="prose prose-sm max-w-none bg-muted rounded-lg p-4" dangerouslySetInnerHTML={{ __html: markdownToHtml(result.notes) }} />
+                <div className="prose prose-sm max-w-none bg-muted rounded-lg p-4 prose-h2:text-primary prose-h3:text-primary prose-a:text-primary hover:prose-a:underline" dangerouslySetInnerHTML={{ __html: markdownToHtml(result.notes) }} />
             </div>
         </div>
       )}

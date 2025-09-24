@@ -115,7 +115,7 @@ export default function ProgressPage() {
                             completed++;
                         } else if (item.status === 'missed') {
                             missed++;
-                        } else if (isPast(itemDate) && !isToday(itemDate)) {
+                        } else if (isPast(itemDate) && !isToday(itemDate) && item.status === 'pending') {
                             // Also count pending tasks from the past as missed for stats
                             missed++;
                         } else {
@@ -169,6 +169,7 @@ export default function ProgressPage() {
                 let currentStreak = 0;
                 if(sortedDates.length > 0) {
                     let lastDate = new Date();
+                    // Check if the most recent completion was today or yesterday
                     if (isToday(sortedDates[0]) || differenceInCalendarDays(lastDate, sortedDates[0]) === 1) {
                         currentStreak = 1;
                         lastDate = sortedDates[0];
@@ -178,8 +179,9 @@ export default function ProgressPage() {
                                 currentStreak++;
                                 lastDate = sortedDates[i];
                             } else if (diff > 1) {
-                                break;
+                                break; // Streak is broken
                             }
+                            // if diff is 0, it's the same day, so we don't increment but continue checking
                         }
                     }
                 }
