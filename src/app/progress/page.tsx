@@ -13,7 +13,7 @@ import {
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, Timestamp } from "firebase/firestore";
-import { isPast, parseISO, differenceInCalendarDays, isToday, subDays } from "date-fns";
+import { isPast, parseISO, differenceInCalendarDays, isToday, subDays, startOfDay } from "date-fns";
 import { Loader2, ShieldCheck, Star, Zap, Trophy, Leaf } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -77,16 +77,32 @@ export default function ProgressPage() {
                     ...doc.data(),
                 })) as StudyPlan[];
 
+                const today = startOfDay(new Date());
+
                 // Calculate Subject Progress
                 const newProgressData = plans.map(plan => {
+                    let completed = 0;
+                    let missed = 0;
+                    let pending = 0;
+
+                    plan.schedule.forEach(item => {
+                        const itemDate = startOfDay(parseISO(item.date));
+                        if (item.status === 'completed') {
+                            completed++;
+                        } else if (item.status === 'missed') {
+                            missed++;
+                        } else if (isPast(itemDate) && !isToday(itemDate)) {
+                            // Also count pending tasks from the past as missed for stats
+                            missed++;
+                        } else {
+                            pending++;
+                        }
+                    });
+
                     const totalTasks = plan.schedule.length;
                     if (totalTasks === 0) {
                         return { subject: plan.topic, value: 0, completed: 0, missed: 0, pending: 0 };
                     }
-                    
-                    const completed = plan.schedule.filter(item => item.status === 'completed').length;
-                    const missed = plan.schedule.filter(item => item.status === 'missed').length;
-                    const pending = totalTasks - completed - missed;
                     
                     const value = totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
                     return { subject: plan.topic, value, completed, missed, pending };
@@ -120,7 +136,7 @@ export default function ProgressPage() {
                 setChartData(newChartData);
 
                 // Calculate Streak
-                const sortedDates = Array.from(completedDates).map(parseISO).sort((a,b) => b.getTime() - a.getTime());
+                const sortedDates = Array.from(completedDates).map(d => startOfDay(parseISO(d))).sort((a,b) => b.getTime() - a.getTime());
                 let currentStreak = 0;
                 if(sortedDates.length > 0) {
                     let lastDate = new Date();

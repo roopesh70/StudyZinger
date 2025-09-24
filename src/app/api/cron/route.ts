@@ -2,7 +2,7 @@
 import {NextResponse} from 'next/server';
 import {db} from '@/lib/firebase';
 import {collection, getDocs, updateDoc, doc, getDoc, writeBatch, arrayUnion, serverTimestamp} from 'firebase/firestore';
-import {isPast, isToday, parseISO} from 'date-fns';
+import {isPast, isToday, parseISO, startOfDay} from 'date-fns';
 import {sendDailySummary} from '@/ai/flows/send-daily-summary';
 
 interface ScheduleItem {
@@ -28,7 +28,7 @@ export async function GET() {
   try {
     const batch = writeBatch(db);
     const plansSnapshot = await getDocs(collection(db, 'studyPlans'));
-    const today = new Date();
+    const today = startOfDay(new Date());
 
     for (const planDoc of plansSnapshot.docs) {
       const plan = {id: planDoc.id, ...planDoc.data()} as StudyPlan;
@@ -39,7 +39,7 @@ export async function GET() {
 
       for (let i = 0; i < updatedSchedule.length; i++) {
         const item = updatedSchedule[i];
-        const itemDate = parseISO(item.date);
+        const itemDate = startOfDay(parseISO(item.date));
 
         // Mark past, pending tasks as missed
         if (isPast(itemDate) && !isToday(itemDate) && item.status === 'pending') {
