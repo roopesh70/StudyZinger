@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -97,13 +98,13 @@ export function ResourceCurator() {
               <h3 className="text-lg font-semibold">Recommended Resources</h3>
               <ul className="space-y-3">
                 {resources.map((resource, index) => (
-                  <li key={index} className="border rounded-lg p-4 hover:bg-accent transition-colors">
-                    <a href={resource.url} target="_blank" rel="noopener noreferrer" className="flex items-start justify-between gap-4 group">
+                  <li key={index} className="border rounded-lg p-4 hover:bg-accent hover:text-accent-foreground transition-colors group">
+                    <a href={resource.url} target="_blank" rel="noopener noreferrer" className="flex items-start justify-between gap-4">
                       <div>
                         <p className="font-semibold group-hover:underline">{resource.title}</p>
-                        <p className="text-sm text-muted-foreground">{resource.description}</p>
+                        <p className="text-sm text-muted-foreground group-hover:text-accent-foreground">{resource.description}</p>
                       </div>
-                      <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
+                      <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0 mt-1 group-hover:text-accent-foreground" />
                     </a>
                   </li>
                 ))}
