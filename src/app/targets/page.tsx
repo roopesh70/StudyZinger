@@ -7,7 +7,7 @@ import { collection, query, orderBy, getDocs, Timestamp, doc, updateDoc, deleteD
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, BookCopy, CalendarDays, Edit, CheckCircle, XCircle, AlertCircle, Trash2 } from "lucide-react";
+import { Loader2, BookCopy, CalendarDays, Edit, CheckCircle, XCircle, AlertCircle, Trash2, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isToday, parseISO } from "date-fns";
 import { getNotesForTopic, GetNotesForTopicOutput } from "@/ai/flows/get-notes-for-topic";
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 
 interface ScheduleItem {
   day: string;
@@ -269,23 +270,62 @@ export default function TargetsPage() {
       ) : (
         <Accordion type="single" collapsible className="w-full space-y-4">
           {studyPlans.map(plan => {
-             const todaysTopic = plan.schedule.find(item => isToday(parseISO(item.date)))?.topic;
+            const todaysTopic = plan.schedule.find(item => isToday(parseISO(item.date)))?.topic;
+            const completedTasks = plan.schedule.filter(i => i.status === 'completed').length;
+            const totalTasks = plan.schedule.length;
+            const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+            const circleCircumference = 2 * Math.PI * 20; // 2 * pi * radius
+            
             return (
-            <Card key={plan.id}>
-              <AccordionItem value={plan.id} className="border-0">
-                <div className="flex items-center p-6">
-                    <AccordionTrigger className="flex-1 hover:no-underline p-0">
-                       <div className="text-left">
-                            <h2 className="text-xl font-semibold">{plan.topic}</h2>
-                            <p className="text-sm text-muted-foreground">
-                                Saved on: {plan.createdAt ? new Date(plan.createdAt.seconds * 1000).toLocaleDateString() : 'Date not available'}
-                            </p>
-                       </div>
-                    </AccordionTrigger>
-                     <Button variant="ghost" size="icon" className="ml-4 text-muted-foreground hover:text-destructive" onClick={() => setPlanToDelete(plan.id)}>
-                        <Trash2 className="h-5 w-5" />
+            <AccordionItem value={plan.id} className="border-0" asChild>
+              <Card>
+                <AccordionTrigger className="w-full text-left p-6 hover:no-underline group">
+                   <div className="flex items-center gap-6 flex-1">
+                      <div className="relative h-12 w-12">
+                        <svg className="w-full h-full" viewBox="0 0 44 44">
+                          <circle
+                            className="stroke-current text-muted"
+                            strokeWidth="4"
+                            fill="transparent"
+                            r="20"
+                            cx="22"
+                            cy="22"
+                          />
+                          <circle
+                            className="stroke-current text-primary transition-all duration-500"
+                            strokeWidth="4"
+                            strokeDasharray={`${circleCircumference} ${circleCircumference}`}
+                            strokeDashoffset={circleCircumference - (progress / 100) * circleCircumference}
+                            strokeLinecap="round"
+                            fill="transparent"
+                            r="20"
+                            cx="22"
+                            cy="22"
+                            transform="rotate(-90 22 22)"
+                          />
+                        </svg>
+                        <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold">
+                          {Math.round(progress)}%
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <h2 className="text-xl font-semibold group-hover:text-primary transition-colors">{plan.topic}</h2>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                          <span>{totalTasks} days</span>
+                          <span className="h-1 w-1 rounded-full bg-muted-foreground"></span>
+                          <span>
+                            Saved: {plan.createdAt ? new Date(plan.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
+                          </span>
+                        </div>
+                      </div>
+                   </div>
+                   <div className="flex items-center">
+                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive rounded-full" onClick={(e) => { e.stopPropagation(); setPlanToDelete(plan.id); }}>
+                      <Trash2 className="h-5 w-5" />
                     </Button>
-                </div>
+                    <ChevronDown className="h-5 w-5 ml-2 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                   </div>
+                </AccordionTrigger>
                 <AccordionContent>
                     <div className="px-6 pb-6 space-y-6">
                         <div>
@@ -372,8 +412,8 @@ export default function TargetsPage() {
                         </div>
                     </div>
                 </AccordionContent>
-              </AccordionItem>
-            </Card>
+              </Card>
+            </AccordionItem>
             )
           })}
         </Accordion>
