@@ -108,7 +108,7 @@ function TodayNotes({ topic }: { topic: string }) {
 
   return (
     <div 
-      className="prose prose-sm max-w-none bg-muted rounded-lg p-4 prose-headings:font-semibold prose-a:text-primary hover:prose-a:underline" 
+      className="prose prose-sm max-w-none bg-muted rounded-lg p-4 prose-h3:text-primary prose-a:text-primary hover:prose-a:underline" 
       dangerouslySetInnerHTML={{ __html: markdownToHtml(notes.notes) }} 
     />
   );

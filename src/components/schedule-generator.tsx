@@ -220,7 +220,7 @@ export function ScheduleGenerator() {
                       )}
                     />
                     <div className="flex-grow" />
-                    <Button type="submit" size="icon" className="rounded-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={loading}>
+                    <Button type="submit" size="icon" className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={loading}>
                         {loading ? <Loader2 className="animate-spin" /> : <ArrowRight />}
                     </Button>
                 </div>
@@ -294,15 +294,15 @@ export function ScheduleGenerator() {
       </div>
       
       <div className="mt-8 flex flex-wrap justify-center gap-2">
-        <Button variant="secondary" size="sm" onClick={() => suggestionClicked("Learn Next.js App Router")}>Learn Next.js</Button>
-        <Button variant="secondary" size="sm" onClick={() => suggestionClicked("Master Python for Data Science")}>Python for Data Science</Button>
-        <Button variant="secondary" size="sm" onClick={() => suggestionClicked("The History of the Roman Empire")}>Roman Empire History</Button>
-        <Button variant="secondary" size="sm" onClick={() => suggestionClicked("Introduction to Organic Chemistry")}>Organic Chemistry</Button>
+        <Button variant="outline" size="sm" onClick={() => suggestionClicked("Learn Next.js App Router")}>Learn Next.js</Button>
+        <Button variant="outline" size="sm" onClick={() => suggestionClicked("Master Python for Data Science")}>Python for Data Science</Button>
+        <Button variant="outline" size="sm" onClick={() => suggestionClicked("The History of the Roman Empire")}>Roman Empire History</Button>
+        <Button variant="outline" size="sm" onClick={() => suggestionClicked("Introduction to Organic Chemistry")}>Organic Chemistry</Button>
       </div>
 
       {loading && (
         <div className="mt-12 text-center">
-            <Loader2 className="mx-auto h-12 w-12 animate-spin text-accent" />
+            <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
             <p className="mt-4 text-muted-foreground">Generating your plan...</p>
         </div>
       )}
@@ -355,5 +355,3 @@ export function ScheduleGenerator() {
     </div>
   );
 }
-
-    

@@ -128,7 +128,7 @@ export function AIChat() {
                         </AvatarFallback>
                     </Avatar>
                     <div className="rounded-lg p-3 bg-muted border">
-                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
                     </div>
                 </div>
             )}
