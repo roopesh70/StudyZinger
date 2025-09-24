@@ -319,7 +319,7 @@ export default function ProgressPage() {
                 <CardDescription>A look at your completed tasks month by month.</CardDescription>
             </CardHeader>
             <CardContent>
-                <ChartContainer config={monthlyChartConfig} className="min-h-[200px] w-full">
+                <ChartContainer config={monthlyChartConfig} className="min-h-[150px] w-full">
                 <BarChart accessibilityLayer data={monthlyChartData}>
                     <CartesianGrid vertical={false} />
                     <XAxis
@@ -343,5 +343,7 @@ export default function ProgressPage() {
     </main>
   );
 }
+
+    
 
     
