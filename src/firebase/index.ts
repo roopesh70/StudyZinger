@@ -1,12 +1,8 @@
 
 'use client';
 
-import {
-  getAuth,
-  getFirestore,
-  type Auth,
-  type Firestore,
-} from 'firebase/firestore';
+import { getAuth, type Auth } from 'firebase/auth';
+import { getFirestore, type Firestore } from 'firebase/firestore';
 import {
   initializeApp,
   getApp,
