@@ -1,0 +1,138 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Represents a user's profile in the system.",
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "photoURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the user's profile picture."
+        },
+        "lastLogin": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The last time the user logged in."
+        }
+      },
+      "required": ["displayName", "email"]
+    },
+    "StudyPlan": {
+      "title": "Study Plan",
+      "description": "A personalized study plan for a user.",
+      "type": "object",
+      "properties": {
+        "topic": {
+          "type": "string"
+        },
+        "schedule": {
+          "type": "array",
+          "items": {
+            "$ref": "#/entities/ScheduleItem"
+          }
+        },
+        "notes": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "userEmail": {
+          "type": "string",
+          "format": "email"
+        },
+        "userName": {
+            "type": "string"
+        },
+        "autoDeleteOnCompletion": {
+          "type": "boolean"
+        }
+      },
+      "required": ["topic", "schedule", "userId", "userEmail"]
+    },
+    "ScheduleItem": {
+      "title": "Schedule Item",
+      "description": "A single item in a study schedule.",
+      "type": "object",
+      "properties": {
+        "day": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "topic": {
+          "type": "string"
+        },
+        "tasks": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "completed", "missed"]
+        }
+      },
+      "required": ["day", "date", "topic", "tasks", "status"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "A notification for a user.",
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "read": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["warning", "reminder", "update"]
+        }
+      },
+      "required": ["message", "read", "createdAt"]
+    }
+  },
+  "auth": {
+    "providers": ["google.com"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Stores public profile information for users."
+    },
+    "/users/{userId}/notifications/{notificationId}": {
+      "schema": {
+        "$ref": "#/entities/Notification"
+      },
+      "description": "Stores notifications for a specific user."
+    },
+    "/studyPlans/{planId}": {
+      "schema": {
+        "$ref": "#/entities/StudyPlan"
+      },
+      "description": "Stores study plans created by users."
+    }
+  }
+}

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { collection, query, orderBy, getDocs, Timestamp, doc, updateDoc, deleteDoc, writeBatch } from "firebase/firestore";
+import { collection, query, orderBy, getDocs, Timestamp, doc, updateDoc, deleteDoc, writeBatch, where } from "firebase/firestore";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -28,6 +28,10 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useUser } from "@/firebase";
+import Link from "next/link";
+import { FirestorePermissionError } from "@/firebase/errors";
+import { errorEmitter } from "@/firebase/error-emitter";
 
 interface ScheduleItem {
   day: string;
@@ -44,6 +48,7 @@ interface StudyPlan {
   schedule: ScheduleItem[];
   createdAt: Timestamp;
   autoDeleteOnCompletion?: boolean;
+  userId: string;
 }
 
 // A simple markdown to HTML converter
@@ -57,7 +62,7 @@ const markdownToHtml = (markdown: string) => {
     .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
     .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">$1</a>') // Links
     .replace(/^- (.*)/gm, '<li>$1</li>')
-    .replace(/^\* (.*)/gm, '<li>$1</li>')
+    .replace(/^\* (.*)/gm, '<li>$1</sup></li>')
     .replace(/^\d+\. (.*)/gm, '<li>$1</li>');
 
   // Wrap consecutive list items in <ul> or <ol>
@@ -129,99 +134,109 @@ const statusColors: { [key: string]: 'default' | 'destructive' | 'secondary' } =
 };
 
 export default function TargetsPage() {
+  const { user, loading: userLoading } = useUser();
   const [studyPlans, setStudyPlans] = useState<StudyPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<{[key: string]: boolean}>({});
   const [planToDelete, setPlanToDelete] = useState<string | null>(null);
   const { toast } = useToast();
 
-  async function fetchStudyPlans() {
-    setLoading(true);
-    try {
-      const q = query(collection(db, "studyPlans"), orderBy("createdAt", "desc"));
-      const querySnapshot = await getDocs(q);
-      const plans = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as StudyPlan[];
-      setStudyPlans(plans);
-    } catch (error) {
-      console.error("Error fetching study plans: ", error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
+    if (userLoading) return;
+    if (!user) {
+      setStudyPlans([]);
+      setLoading(false);
+      return;
+    }
+
+    async function fetchStudyPlans() {
+      setLoading(true);
+      try {
+        const q = query(collection(db, "studyPlans"), where("userId", "==", user.uid), orderBy("createdAt", "desc"));
+        const querySnapshot = await getDocs(q);
+        const plans = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as StudyPlan[];
+        setStudyPlans(plans);
+      } catch (error) {
+        console.error("Error fetching study plans: ", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     fetchStudyPlans();
-  }, []);
+  }, [user, userLoading]);
 
   const handleDelete = async (planId: string) => {
-    try {
-      await deleteDoc(doc(db, "studyPlans", planId));
-      setStudyPlans(prev => prev.filter(p => p.id !== planId));
-      toast({
-        title: "Success",
-        description: "Study plan deleted.",
+    const planRef = doc(db, 'studyPlans', planId);
+    deleteDoc(planRef)
+      .then(() => {
+        setStudyPlans(prev => prev.filter(p => p.id !== planId));
+        toast({
+          title: 'Success',
+          description: 'Study plan deleted.',
+        });
+      })
+      .catch(serverError => {
+        const permissionError = new FirestorePermissionError({
+          path: planRef.path,
+          operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      })
+      .finally(() => {
+        setPlanToDelete(null);
       });
-    } catch (error) {
-      console.error("Error deleting plan: ", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to delete study plan.",
-      });
-    } finally {
-      setPlanToDelete(null);
-    }
   };
 
   const handleUpdateStatus = async (planId: string, itemDate: string, newStatus: 'completed' | 'pending') => {
     setUpdating(prev => ({...prev, [`${planId}-${itemDate}`]: true}));
-    try {
-      const planIndex = studyPlans.findIndex(p => p.id === planId);
-      if (planIndex === -1) return;
+    
+    const planIndex = studyPlans.findIndex(p => p.id === planId);
+    if (planIndex === -1) return;
 
-      let newStudyPlans = [...studyPlans];
-      const plan = {...newStudyPlans[planIndex]};
-      const newSchedule = plan.schedule.map(item => 
-        item.date === itemDate ? {...item, status: newStatus} : item
-      );
-      plan.schedule = newSchedule;
+    const plan = { ...studyPlans[planIndex] };
+    const newSchedule = plan.schedule.map(item =>
+      item.date === itemDate ? { ...item, status: newStatus } : item
+    );
+    
+    const planRef = doc(db, "studyPlans", planId);
+    const updatePayload = { schedule: newSchedule };
 
-      const allCompleted = newSchedule.every(item => item.status === 'completed');
+    updateDoc(planRef, updatePayload)
+      .then(() => {
+        const newStudyPlans = [...studyPlans];
+        newStudyPlans[planIndex].schedule = newSchedule;
+        
+        const allCompleted = newSchedule.every(item => item.status === 'completed');
 
-      if (allCompleted && plan.autoDeleteOnCompletion) {
-          await deleteDoc(doc(db, "studyPlans", planId));
-          newStudyPlans.splice(planIndex, 1);
-          setStudyPlans(newStudyPlans);
-          toast({
+        if (allCompleted && newStudyPlans[planIndex].autoDeleteOnCompletion) {
+          handleDelete(planId);
+           toast({
               title: "Plan Completed!",
               description: `"${plan.topic}" has been completed and automatically deleted.`,
           });
-      } else {
-        const planRef = doc(db, "studyPlans", planId);
-        await updateDoc(planRef, { schedule: newSchedule });
-        
-        newStudyPlans[planIndex] = plan;
-        setStudyPlans(newStudyPlans);
-
-        toast({
-          title: "Success",
-          description: `Task marked as ${newStatus}.`,
+        } else {
+          setStudyPlans(newStudyPlans);
+          toast({
+            title: "Success",
+            description: `Task marked as ${newStatus}.`,
+          });
+        }
+      })
+      .catch(serverError => {
+        const permissionError = new FirestorePermissionError({
+          path: planRef.path,
+          operation: 'update',
+          requestResourceData: updatePayload,
         });
-      }
-
-    } catch (error) {
-      console.error("Error updating status: ", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to update task status.",
+        errorEmitter.emit('permission-error', permissionError);
+      })
+      .finally(() => {
+        setUpdating(prev => ({...prev, [`${planId}-${itemDate}`]: false}));
       });
-    } finally {
-       setUpdating(prev => ({...prev, [`${planId}-${itemDate}`]: false}));
-    }
   };
 
   const handleAutoDeleteToggle = async (planId: string, checked: boolean) => {
@@ -232,30 +247,46 @@ export default function TargetsPage() {
     newStudyPlans[planIndex].autoDeleteOnCompletion = checked;
     setStudyPlans(newStudyPlans);
 
-    try {
-        const planRef = doc(db, "studyPlans", planId);
-        await updateDoc(planRef, { autoDeleteOnCompletion: checked });
-        toast({
-            title: "Settings updated",
-            description: `Auto-delete on completion is now ${checked ? 'ON' : 'OFF'}.`,
+    const planRef = doc(db, "studyPlans", planId);
+    const updatePayload = { autoDeleteOnCompletion: checked };
+
+    updateDoc(planRef, updatePayload)
+        .then(() => {
+            toast({
+                title: "Settings updated",
+                description: `Auto-delete on completion is now ${checked ? 'ON' : 'OFF'}.`,
+            });
+        })
+        .catch(serverError => {
+            // Revert UI change
+            const revertedPlans = [...studyPlans];
+            revertedPlans[planIndex].autoDeleteOnCompletion = !checked;
+            setStudyPlans(revertedPlans);
+            
+            const permissionError = new FirestorePermissionError({
+                path: planRef.path,
+                operation: 'update',
+                requestResourceData: updatePayload,
+            });
+            errorEmitter.emit('permission-error', permissionError);
         });
-    } catch (error) {
-        console.error("Error updating auto-delete setting: ", error);
-        // Revert UI change
-        newStudyPlans[planIndex].autoDeleteOnCompletion = !checked;
-        setStudyPlans(newStudyPlans);
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Could not update auto-delete setting.",
-        });
-    }
   };
 
-  if (loading) {
+  if (loading || userLoading) {
     return (
       <div className="flex justify-center items-center h-[calc(100vh-8rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex flex-col justify-center items-center h-[calc(100vh-8rem)] gap-4">
+        <p className="text-lg text-muted-foreground">Please log in to view your targets.</p>
+        <Button asChild>
+            <Link href="/login?returnTo=/targets">Login</Link>
+        </Button>
       </div>
     );
   }

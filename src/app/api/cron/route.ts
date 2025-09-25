@@ -1,9 +1,12 @@
 // src/app/api/cron/route.ts
 import {NextResponse} from 'next/server';
 import {db} from '@/lib/firebase';
-import {collection, getDocs, updateDoc, doc, getDoc, writeBatch, arrayUnion, serverTimestamp} from 'firebase/firestore';
+import {collection, getDocs, updateDoc, doc, getDoc, writeBatch, arrayUnion, serverTimestamp, query, where} from 'firebase/firestore';
 import {isPast, isToday, parseISO, startOfDay} from 'date-fns';
 import {sendDailySummary} from '@/ai/flows/send-daily-summary';
+import { User, getAuth} from "firebase/auth";
+import { app } from "@/lib/firebase";
+
 
 interface ScheduleItem {
   id: string;
@@ -18,11 +21,24 @@ interface StudyPlan {
   id: string;
   topic: string;
   schedule: ScheduleItem[];
-  // Assuming there's a user associated with the plan
   userId: string; 
-  // For simplicity, let's assume we have user's email on the plan
   userEmail: string; 
+  userName?: string;
 }
+
+// Function to get user data from a separate 'users' collection
+async function getUserProfile(userId: string): Promise<{ email: string; name: string } | null> {
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    if (userDoc.exists()) {
+        const userData = userDoc.data();
+        return {
+            email: userData.email,
+            name: userData.displayName || 'Student',
+        };
+    }
+    return null;
+}
+
 
 export async function GET() {
   try {
@@ -59,14 +75,39 @@ export async function GET() {
       }
 
       // Send email if there are tasks for today
-      // For now, let's assume we have email and name.
-      // In a real app this would come from a user profile.
-      if (todaysTasks.length > 0 && plan.userEmail) {
-        await sendDailySummary({
-          email: plan.userEmail,
-          name: 'Student', // Placeholder
-          tasks: todaysTasks,
-        });
+      if (todaysTasks.length > 0 && plan.userId) {
+         const userProfile = await getUserProfile(plan.userId);
+         if (userProfile) {
+            await sendDailySummary({
+              email: userProfile.email,
+              name: userProfile.name,
+              tasks: todaysTasks,
+            });
+         }
+      }
+       // Add a notification for missed tasks
+      if (needsUpdate) {
+          const missedTasksCount = updatedSchedule.filter(item => item.status === 'missed' && isPast(parseISO(item.date)) && !isToday(parseISO(item.date))).length;
+          if (missedTasksCount > 0) {
+            const notificationRef = doc(collection(db, `users/${plan.userId}/notifications`));
+            batch.set(notificationRef, {
+                message: `You missed ${missedTasksCount} task(s) from your "${plan.topic}" plan. Catch up!`,
+                read: false,
+                createdAt: serverTimestamp(),
+                type: 'warning'
+            });
+          }
+      }
+        
+      // Add a notification for today's tasks
+      if (todaysTasks.length > 0) {
+          const notificationRef = doc(collection(db, `users/${plan.userId}/notifications`));
+          batch.set(notificationRef, {
+              message: `You have ${todaysTasks.length} task(s) for "${plan.topic}" today. Let's get to it!`,
+              read: false,
+              createdAt: serverTimestamp(),
+              type: 'reminder'
+          });
       }
     }
 

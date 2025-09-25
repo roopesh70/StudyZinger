@@ -13,10 +13,13 @@ import {
 } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, Timestamp } from "firebase/firestore";
+import { collection, getDocs, Timestamp, query, where } from "firebase/firestore";
 import { isPast, parseISO, differenceInCalendarDays, isToday, subDays, startOfDay, format, eachDayOfInterval } from "date-fns";
 import { Loader2, ShieldCheck, Star, Zap, Trophy, Leaf } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useUser } from "@/firebase";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 interface ScheduleItem {
   day: string;
@@ -31,6 +34,7 @@ interface StudyPlan {
   topic: string;
   schedule: ScheduleItem[];
   createdAt: Timestamp;
+  userId: string;
 }
 
 interface ProgressItem {
@@ -74,6 +78,7 @@ const dailyChartConfig = {
 
 
 export default function ProgressPage() {
+    const { user, loading: userLoading } = useUser();
     const [loading, setLoading] = useState(true);
     const [progressData, setProgressData] = useState<ProgressItem[]>([]);
     const [monthlyChartData, setMonthlyChartData] = useState<MonthlyChartDataItem[]>([]);
@@ -83,10 +88,17 @@ export default function ProgressPage() {
     const [streak, setStreak] = useState(0);
 
     useEffect(() => {
+        if (userLoading) return;
+        if (!user) {
+            setLoading(false);
+            return;
+        }
+
         async function fetchProgress() {
             setLoading(true);
             try {
-                const querySnapshot = await getDocs(collection(db, "studyPlans"));
+                const q = query(collection(db, "studyPlans"), where("userId", "==", user.uid));
+                const querySnapshot = await getDocs(q);
                 const plans = querySnapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data(),
@@ -210,12 +222,23 @@ export default function ProgressPage() {
         }
 
         fetchProgress();
-    }, []);
+    }, [user, userLoading]);
 
-    if (loading) {
+    if (loading || userLoading) {
         return (
           <div className="flex justify-center items-center h-[calc(100vh-8rem)]">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          </div>
+        );
+    }
+    
+    if (!user) {
+        return (
+          <div className="flex flex-col justify-center items-center h-[calc(100vh-8rem)] gap-4">
+            <p className="text-lg text-muted-foreground">Please log in to view your progress.</p>
+            <Button asChild>
+                <Link href="/login?returnTo=/progress">Login</Link>
+            </Button>
           </div>
         );
     }
@@ -343,11 +366,3 @@ export default function ProgressPage() {
     </main>
   );
 }
-
-    
-
-    
-
-    
-
-    

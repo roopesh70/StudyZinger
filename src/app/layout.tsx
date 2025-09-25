@@ -5,6 +5,9 @@ import { SidebarNav } from '@/components/layout/sidebar-nav';
 import { Header } from '@/components/layout/header';
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from '@/components/theme-provider';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+
 
 export const metadata: Metadata = {
   title: 'zinger',
@@ -21,7 +24,7 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Assistant:wght@700&family=Lovers+Quarrel&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Assistant:wght@700&family=Lovers+Quarrel&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
         <ThemeProvider
@@ -30,16 +33,19 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <SidebarProvider>
-            <Sidebar>
-              <SidebarNav />
-            </Sidebar>
-            <SidebarInset>
-              <Header />
-              {children}
-            </SidebarInset>
-          </SidebarProvider>
-          <Toaster />
+         <FirebaseClientProvider>
+            <FirebaseErrorListener />
+            <SidebarProvider>
+                <Sidebar>
+                <SidebarNav />
+                </Sidebar>
+                <SidebarInset>
+                <Header />
+                {children}
+                </SidebarInset>
+            </SidebarProvider>
+            <Toaster />
+          </FirebaseClientProvider>
         </ThemeProvider>
       </body>
     </html>

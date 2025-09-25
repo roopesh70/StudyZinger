@@ -21,8 +21,11 @@ import { Loader2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, doc, setDoc } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
+import { useUser } from "@/firebase";
+import { useRouter } from "next/navigation";
+
 
 const formSchema = z.object({
   topic: z.string().min(5, { message: "Topic must be at least 5 characters." }),
@@ -43,6 +46,9 @@ export function ScheduleGenerator() {
   const [saving, setSaving] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
+  const { user } = useUser();
+  const router = useRouter();
+
 
   useEffect(() => {
     setIsClient(true);
@@ -93,25 +99,52 @@ export function ScheduleGenerator() {
   }
 
   const handleSave = async () => {
-    if (!result) return;
+    if (!result || !user) {
+        if (!user) {
+            toast({
+                variant: "destructive",
+                title: "Not Logged In",
+                description: "You must be logged in to save a study plan.",
+            });
+            router.push('/login?returnTo=/');
+        }
+        return;
+    }
     setSaving(true);
     try {
       const scheduleWithStatus = result.schedule.map(item => ({...item, status: 'pending'}));
       
-      await addDoc(collection(db, "studyPlans"), {
+      const planDoc = {
         topic: form.getValues("topic"),
         schedule: scheduleWithStatus,
         notes: result.notes,
         createdAt: serverTimestamp(),
-        // In a real app, you'd get this from auth
-        userEmail: "test-user@example.com",
+        userId: user.uid,
+        userEmail: user.email,
+        userName: user.displayName,
         autoDeleteOnCompletion: false
-      });
+      };
+      
+      await addDoc(collection(db, "studyPlans"), planDoc);
+
+      // Also save/update user profile information
+      const userRef = doc(db, 'users', user.uid);
+      await setDoc(userRef, {
+        displayName: user.displayName,
+        email: user.email,
+        photoURL: user.photoURL,
+        lastLogin: serverTimestamp()
+      }, { merge: true });
+
 
       toast({
         title: "Success!",
         description: "Your study plan has been saved to Targets.",
       });
+
+      // Redirect to targets page after saving
+      router.push('/targets');
+
     } catch (error)
 {
       console.error("Error saving document: ", error);
@@ -313,7 +346,7 @@ export function ScheduleGenerator() {
               <h2 className="text-2xl font-bold flex items-center"><CalendarDays className="mr-3" /> Your Study Schedule</h2>
               <Button onClick={handleSave} disabled={saving}>
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Save
+                Save Plan
               </Button>
             </div>
             <div>
