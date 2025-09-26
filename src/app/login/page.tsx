@@ -78,7 +78,9 @@ function LoginContent() {
 
     const returnTo = sessionStorage.getItem('returnTo') || '/';
     sessionStorage.removeItem('returnTo');
-    router.replace(returnTo);
+    // Use window.location.href to force a full page reload
+    // This ensures the Firebase auth state is updated before the next page loads
+    window.location.href = returnTo;
   };
   
   useEffect(() => {
