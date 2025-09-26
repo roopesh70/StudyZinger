@@ -103,6 +103,7 @@ function LoginContent() {
         });
         setLoading(prev => ({...prev, redirect: false}));
       });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth]);
 
 
@@ -308,9 +309,9 @@ function LoginContent() {
                 onClick={handleGoogleLogin}
                 className="w-full"
                 variant="outline"
-                disabled={loading.google}
+                disabled={loading.google || loading.redirect}
               >
-                {loading.google ? (
+                {loading.google || loading.redirect ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <svg
@@ -418,3 +419,5 @@ export default function LoginPage() {
     </Suspense>
   );
 }
+
+    
