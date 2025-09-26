@@ -22,6 +22,7 @@ export function MotivationalQuote() {
         return;
       }
 
+      setLoading(true);
       try {
         const result = await getDailyMotivationalQuote();
         if(result.quote) {
@@ -29,11 +30,18 @@ export function MotivationalQuote() {
           localStorage.setItem('dailyQuote', result.quote);
           localStorage.setItem('dailyQuoteDate', today);
         } else {
-          setQuote("The journey of a thousand miles begins with a single step."); // Fallback quote
+          // Fallback quote if AI fails
+          const fallback = "The journey of a thousand miles begins with a single step.";
+          setQuote(fallback);
+          localStorage.setItem('dailyQuote', fallback);
+          localStorage.setItem('dailyQuoteDate', today);
         }
       } catch (error) {
         console.error("Failed to fetch motivational quote:", error);
-        setQuote("The journey of a thousand miles begins with a single step."); // Fallback quote
+         const fallback = "The journey of a thousand miles begins with a single step.";
+         setQuote(fallback);
+         localStorage.setItem('dailyQuote', fallback);
+         localStorage.setItem('dailyQuoteDate', today);
       } finally {
         setLoading(false);
       }

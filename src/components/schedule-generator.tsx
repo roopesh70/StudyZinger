@@ -44,22 +44,16 @@ export function ScheduleGenerator() {
   const [result, setResult] = useState<GeneratePersonalizedStudyScheduleOutput | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
   const { user } = useUser();
   const router = useRouter();
 
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       topic: "",
       duration: "2 weeks",
-      startDate: new Date(),
       dailyStudyTime: "1 hour",
       skillLevel: "Beginner",
       language: "English",
@@ -67,13 +61,12 @@ export function ScheduleGenerator() {
   });
 
   useEffect(() => {
-    if (isClient) {
-      form.reset({
+    // Set start date on client to avoid hydration mismatch
+    form.reset({
         ...form.getValues(),
         startDate: new Date(),
-      });
-    }
-  }, [isClient, form]);
+    });
+  }, [form]);
 
 
   async function onSubmit(values: FormValues) {
@@ -195,10 +188,6 @@ export function ScheduleGenerator() {
     html = html.replace(/\n/g, '<br />');
 
     return html;
-  }
-
-  if (!isClient) {
-    return null; // or a loading skeleton
   }
 
   return (

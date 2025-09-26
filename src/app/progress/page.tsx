@@ -180,7 +180,7 @@ export default function ProgressPage() {
                 const sortedDates = Array.from(completedDates).map(d => startOfDay(parseISO(d))).sort((a,b) => b.getTime() - a.getTime());
                 let currentStreak = 0;
                 if(sortedDates.length > 0) {
-                    let lastDate = new Date();
+                    let lastDate = today;
                     // Check if the most recent completion was today or yesterday
                     if (isToday(sortedDates[0]) || differenceInCalendarDays(lastDate, sortedDates[0]) === 1) {
                         currentStreak = 1;
