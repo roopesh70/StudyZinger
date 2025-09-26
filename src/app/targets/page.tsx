@@ -306,53 +306,53 @@ export default function TargetsPage() {
             return (
             <AccordionItem value={plan.id} key={plan.id} className="border-0">
               <Card>
-                <AccordionTrigger className="w-full text-left p-6 hover:no-underline group">
-                   <div className="flex items-center gap-6 flex-1">
-                      <div className="relative h-12 w-12">
-                        <svg className="w-full h-full" viewBox="0 0 44 44">
-                          <circle
-                            className="stroke-current text-muted"
-                            strokeWidth="4"
-                            fill="transparent"
-                            r="20"
-                            cx="22"
-                            cy="22"
-                          />
-                          <circle
-                            className="stroke-current text-primary transition-all duration-500"
-                            strokeWidth="4"
-                            strokeDasharray={`${circleCircumference} ${circleCircumference}`}
-                            strokeDashoffset={circleCircumference - (progress / 100) * circleCircumference}
-                            strokeLinecap="round"
-                            fill="transparent"
-                            r="20"
-                            cx="22"
-                            cy="22"
-                            transform="rotate(-90 22 22)"
-                          />
-                        </svg>
-                        <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold">
-                          {Math.round(progress)}%
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <h2 className="text-xl font-semibold group-hover:text-primary transition-colors">{plan.topic}</h2>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                          <span>{totalTasks} days</span>
-                          <span className="h-1 w-1 rounded-full bg-muted-foreground"></span>
-                          <span>
-                            Saved: {plan.createdAt ? new Date(plan.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
-                          </span>
-                        </div>
-                      </div>
-                   </div>
-                   <div className="flex items-center">
-                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive rounded-full" onClick={(e) => { e.stopPropagation(); setPlanToDelete(plan.id); }}>
-                      <Trash2 className="h-5 w-5" />
+                <div className="flex items-center p-6 group">
+                    <AccordionTrigger className="w-full text-left hover:no-underline flex-1 p-0">
+                       <div className="flex items-center gap-6 flex-1">
+                          <div className="relative h-12 w-12">
+                            <svg className="w-full h-full" viewBox="0 0 44 44">
+                              <circle
+                                className="stroke-current text-muted"
+                                strokeWidth="4"
+                                fill="transparent"
+                                r="20"
+                                cx="22"
+                                cy="22"
+                              />
+                              <circle
+                                className="stroke-current text-primary transition-all duration-500"
+                                strokeWidth="4"
+                                strokeDasharray={`${circleCircumference} ${circleCircumference}`}
+                                strokeDashoffset={circleCircumference - (progress / 100) * circleCircumference}
+                                strokeLinecap="round"
+                                fill="transparent"
+                                r="20"
+                                cx="22"
+                                cy="22"
+                                transform="rotate(-90 22 22)"
+                              />
+                            </svg>
+                            <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold">
+                              {Math.round(progress)}%
+                            </span>
+                          </div>
+                          <div className="flex-1">
+                            <h2 className="text-xl font-semibold group-hover:text-primary transition-colors">{plan.topic}</h2>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                              <span>{totalTasks} days</span>
+                              <span className="h-1 w-1 rounded-full bg-muted-foreground"></span>
+                              <span>
+                                Saved: {plan.createdAt ? new Date(plan.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
+                              </span>
+                            </div>
+                          </div>
+                       </div>
+                       <ChevronDown className="h-5 w-5 ml-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                    </AccordionTrigger>
+                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive rounded-full ml-2" onClick={() => setPlanToDelete(plan.id)}>
+                        <Trash2 className="h-5 w-5" />
                     </Button>
-                    <ChevronDown className="h-5 w-5 ml-2 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                   </div>
-                </AccordionTrigger>
+                </div>
                 <AccordionContent>
                     <div className="px-6 pb-6">
                         <Tabs defaultValue="schedule">
@@ -469,3 +469,5 @@ export default function TargetsPage() {
     </>
   );
 }
+
+    
