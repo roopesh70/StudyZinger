@@ -1,7 +1,7 @@
 // src/app/api/cron/route.ts
 import {NextResponse} from 'next/server';
 import {db} from '@/lib/firebase';
-import {collectionGroup, getDocs, updateDoc, doc, getDoc, writeBatch, serverTimestamp} from 'firebase/firestore';
+import {collectionGroup, getDocs, query, where, doc, writeBatch, serverTimestamp, getDoc} from 'firebase/firestore';
 import {isPast, isToday, parseISO, startOfDay} from 'date-fns';
 import {sendDailySummary} from '@/ai/flows/send-daily-summary';
 
@@ -19,8 +19,6 @@ interface StudyPlan {
   topic: string;
   schedule: ScheduleItem[];
   userId: string;
-  userEmail: string;
-  userName?: string;
 }
 
 // Function to get user data from a separate 'users' collection
@@ -36,15 +34,24 @@ async function getUserProfile(userId: string): Promise<{ email: string; name: st
     return null;
 }
 
-
 export async function GET() {
   try {
     const batch = writeBatch(db);
-    const plansSnapshot = await getDocs(collectionGroup(db, 'studyPlans'));
+    // Use collectionGroup to get all studyPlans across all users
+    const plansQuery = collectionGroup(db, 'studyPlans');
+    const plansSnapshot = await getDocs(plansQuery);
     const today = startOfDay(new Date());
 
     for (const planDoc of plansSnapshot.docs) {
       const plan = {id: planDoc.id, ...planDoc.data()} as StudyPlan;
+      
+      // The planDoc.ref.parent.parent gives us the user document reference
+      const userDocRef = planDoc.ref.parent.parent;
+      if (!userDocRef || userDocRef.id !== plan.userId) {
+          console.warn(`Skipping plan ${plan.id} with mismatched userId.`);
+          continue;
+      }
+
       let needsUpdate = false;
       const updatedSchedule = [...plan.schedule];
 
@@ -67,9 +74,7 @@ export async function GET() {
       }
 
       if (needsUpdate) {
-        // The reference now needs to point to the subcollection document
-        const planRef = doc(db, 'users', plan.userId, 'studyPlans', plan.id);
-        batch.update(planRef, {schedule: updatedSchedule});
+        batch.update(planDoc.ref, {schedule: updatedSchedule});
       }
 
       // Send email if there are tasks for today
@@ -84,22 +89,22 @@ export async function GET() {
          }
       }
        // Add a notification for missed tasks
-      if (needsUpdate) {
-          const missedTasksCount = updatedSchedule.filter(item => item.status === 'missed' && isPast(parseISO(item.date)) && !isToday(parseISO(item.date))).length;
-          if (missedTasksCount > 0) {
-            const notificationRef = doc(db, `users/${plan.userId}/notifications`);
-            batch.set(notificationRef, {
-                message: `You missed ${missedTasksCount} task(s) from your "${plan.topic}" plan. Catch up!`,
-                read: false,
-                createdAt: serverTimestamp(),
-                type: 'warning'
-            });
-          }
+      const missedTasksCount = updatedSchedule.filter(item => item.status === 'missed' && isPast(parseISO(item.date)) && !isToday(parseISO(item.date))).length;
+      if (missedTasksCount > 0) {
+        // Create a new doc in the notifications subcollection
+        const notificationRef = doc(collection(db, `users/${plan.userId}/notifications`));
+        batch.set(notificationRef, {
+            message: `You missed ${missedTasksCount} task(s) from your "${plan.topic}" plan. Catch up!`,
+            read: false,
+            createdAt: serverTimestamp(),
+            type: 'warning'
+        });
       }
         
       // Add a notification for today's tasks
       if (todaysTasks.length > 0) {
-          const notificationRef = doc(db, `users/${plan.userId}/notifications`);
+          // Create a new doc in the notifications subcollection
+          const notificationRef = doc(collection(db, `users/${plan.userId}/notifications`));
           batch.set(notificationRef, {
               message: `You have ${todaysTasks.length} task(s) for "${plan.topic}" today. Let's get to it!`,
               read: false,
