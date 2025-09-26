@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { db } from "@/lib/firebase";
 import { collection, query, orderBy, getDocs, Timestamp, doc, updateDoc, deleteDoc, writeBatch, where } from "firebase/firestore";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -28,7 +28,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useUser } from "@/firebase";
+import { useUser, useCollection } from "@/firebase";
 import Link from "next/link";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -135,45 +135,32 @@ const statusColors: { [key: string]: 'default' | 'destructive' | 'secondary' } =
 
 export default function TargetsPage() {
   const { user, loading: userLoading } = useUser();
-  const [studyPlans, setStudyPlans] = useState<StudyPlan[]>([]);
-  const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<{[key: string]: boolean}>({});
   const [planToDelete, setPlanToDelete] = useState<string | null>(null);
   const { toast } = useToast();
+  
+  const plansQuery = useMemo(() => {
+    if (!user) return null;
+    return query(
+        collection(db, "studyPlans"), 
+        where("userId", "==", user.uid)
+    );
+  }, [user]);
 
-  useEffect(() => {
-    if (userLoading) return;
-    if (!user) {
-      setStudyPlans([]);
-      setLoading(false);
-      return;
+  const { data: studyPlans, loading: plansLoading } = useCollection<StudyPlan>(plansQuery, { orderBy: ["createdAt", "desc"] });
+  const [localStudyPlans, setLocalStudyPlans] = useState<StudyPlan[]>([]);
+  
+   useEffect(() => {
+    if (studyPlans) {
+      setLocalStudyPlans(studyPlans);
     }
-
-    async function fetchStudyPlans() {
-      setLoading(true);
-      try {
-        const q = query(collection(db, "studyPlans"), where("userId", "==", user.uid), orderBy("createdAt", "desc"));
-        const querySnapshot = await getDocs(q);
-        const plans = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as StudyPlan[];
-        setStudyPlans(plans);
-      } catch (error) {
-        console.error("Error fetching study plans: ", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchStudyPlans();
-  }, [user, userLoading]);
+  }, [studyPlans]);
 
   const handleDelete = async (planId: string) => {
     const planRef = doc(db, 'studyPlans', planId);
     deleteDoc(planRef)
       .then(() => {
-        setStudyPlans(prev => prev.filter(p => p.id !== planId));
+        setLocalStudyPlans(prev => prev.filter(p => p.id !== planId));
         toast({
           title: 'Success',
           description: 'Study plan deleted.',
@@ -194,10 +181,10 @@ export default function TargetsPage() {
   const handleUpdateStatus = async (planId: string, itemDate: string, newStatus: 'completed' | 'pending') => {
     setUpdating(prev => ({...prev, [`${planId}-${itemDate}`]: true}));
     
-    const planIndex = studyPlans.findIndex(p => p.id === planId);
+    const planIndex = localStudyPlans.findIndex(p => p.id === planId);
     if (planIndex === -1) return;
 
-    const plan = { ...studyPlans[planIndex] };
+    const plan = { ...localStudyPlans[planIndex] };
     const newSchedule = plan.schedule.map(item =>
       item.date === itemDate ? { ...item, status: newStatus } : item
     );
@@ -207,7 +194,7 @@ export default function TargetsPage() {
 
     updateDoc(planRef, updatePayload)
       .then(() => {
-        const newStudyPlans = [...studyPlans];
+        const newStudyPlans = [...localStudyPlans];
         newStudyPlans[planIndex].schedule = newSchedule;
         
         const allCompleted = newSchedule.every(item => item.status === 'completed');
@@ -219,7 +206,7 @@ export default function TargetsPage() {
               description: `"${plan.topic}" has been completed and automatically deleted.`,
           });
         } else {
-          setStudyPlans(newStudyPlans);
+          setLocalStudyPlans(newStudyPlans);
           toast({
             title: "Success",
             description: `Task marked as ${newStatus}.`,
@@ -240,12 +227,12 @@ export default function TargetsPage() {
   };
 
   const handleAutoDeleteToggle = async (planId: string, checked: boolean) => {
-    const planIndex = studyPlans.findIndex(p => p.id === planId);
+    const planIndex = localStudyPlans.findIndex(p => p.id === planId);
     if (planIndex === -1) return;
 
-    const newStudyPlans = [...studyPlans];
+    const newStudyPlans = [...localStudyPlans];
     newStudyPlans[planIndex].autoDeleteOnCompletion = checked;
-    setStudyPlans(newStudyPlans);
+    setLocalStudyPlans(newStudyPlans);
 
     const planRef = doc(db, "studyPlans", planId);
     const updatePayload = { autoDeleteOnCompletion: checked };
@@ -259,9 +246,9 @@ export default function TargetsPage() {
         })
         .catch(serverError => {
             // Revert UI change
-            const revertedPlans = [...studyPlans];
+            const revertedPlans = [...localStudyPlans];
             revertedPlans[planIndex].autoDeleteOnCompletion = !checked;
-            setStudyPlans(revertedPlans);
+            setLocalStudyPlans(revertedPlans);
             
             const permissionError = new FirestorePermissionError({
                 path: planRef.path,
@@ -272,7 +259,7 @@ export default function TargetsPage() {
         });
   };
 
-  if (loading || userLoading) {
+  if (userLoading || plansLoading) {
     return (
       <div className="flex justify-center items-center h-[calc(100vh-8rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -295,13 +282,13 @@ export default function TargetsPage() {
     <>
     <main className="flex-1 p-4 md:p-6">
       <h1 className="text-2xl font-bold mb-6">Your Saved Study Targets</h1>
-      {studyPlans.length === 0 ? (
+      {localStudyPlans.length === 0 ? (
         <p className="text-center text-muted-foreground mt-8">
           You haven't saved any study plans yet. Go to the Home tab to generate and save one!
         </p>
       ) : (
         <Accordion type="single" collapsible className="w-full space-y-4">
-          {studyPlans.map(plan => {
+          {localStudyPlans.map(plan => {
             const todaysTopic = plan.schedule.find(item => isToday(parseISO(item.date)))?.topic;
             const completedTasks = plan.schedule.filter(i => i.status === 'completed').length;
             const totalTasks = plan.schedule.length;
@@ -309,7 +296,7 @@ export default function TargetsPage() {
             const circleCircumference = 2 * Math.PI * 20; // 2 * pi * radius
             
             return (
-            <AccordionItem value={plan.id} className="border-0" asChild>
+            <AccordionItem value={plan.id} key={plan.id} className="border-0" asChild>
               <Card>
                 <AccordionTrigger className="w-full text-left p-6 hover:no-underline group">
                    <div className="flex items-center gap-6 flex-1">
@@ -376,7 +363,7 @@ export default function TargetsPage() {
                                             <TableHead className="w-[120px]">Date</TableHead>
                                             <TableHead>Topic</TableHead>
                                             <TableHead>Tasks</TableHead>
-                                            <TableHead className="w-[100px]">Status</TableHead>
+                                            <TableHead className="w-[100px]">Status</Table.Head>
                                             <TableHead className="w-[120px]">Action</TableHead>
                                             </TableRow>
                                         </TableHeader>

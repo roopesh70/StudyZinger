@@ -27,7 +27,7 @@ interface CollectionData<T> {
 }
 
 export function useCollection<T extends DocumentData>(
-  collectionRef: CollectionReference | Query | null,
+  collectionQuery: CollectionReference | Query | null,
   options?: UseCollectionOptions
 ): CollectionData<T> {
   const db = useFirestore();
@@ -37,25 +37,26 @@ export function useCollection<T extends DocumentData>(
 
   // Memoize the query to prevent re-renders
   const finalQuery = useMemo(() => {
-    if (!collectionRef) return null;
+    if (!collectionQuery) return null;
 
-    let q: Query = collectionRef;
+    let q: Query = collectionQuery;
 
     if (options?.where) {
       q = query(q, where(...options.where));
     }
     if (options?.orderBy) {
-      q = query(q, orderBy(...options.orderBy[0], options.orderBy[1]));
+      q = query(q, orderBy(options.orderBy[0], options.orderBy[1]));
     }
     if (options?.limit) {
       q = query(q, limit(options.limit));
     }
     return q;
-  }, [collectionRef, options?.orderBy, options?.limit, options?.where]);
+  }, [collectionQuery, options?.orderBy, options?.limit, options?.where]);
 
 
   useEffect(() => {
     if (!db || !finalQuery) {
+      setData(null);
       setLoading(false);
       return;
     }
@@ -74,8 +75,9 @@ export function useCollection<T extends DocumentData>(
         setError(null);
       },
       (err: FirestoreError) => {
+        const path = 'path' in finalQuery ? finalQuery.path : 'unknown';
         const permissionError = new FirestorePermissionError({
-            path: finalQuery.path,
+            path: path,
             operation: 'list',
         });
         errorEmitter.emit('permission-error', permissionError);

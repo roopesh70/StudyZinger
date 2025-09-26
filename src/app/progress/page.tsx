@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { StudyTipsGenerator } from "@/components/study-tips-generator";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -13,11 +13,11 @@ import {
 } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, Timestamp, query, where } from "firebase/firestore";
+import { collection, Timestamp, query, where } from "firebase/firestore";
 import { isPast, parseISO, differenceInCalendarDays, isToday, subDays, startOfDay, format, eachDayOfInterval } from "date-fns";
 import { Loader2, ShieldCheck, Star, Zap, Trophy, Leaf } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useUser } from "@/firebase";
+import { useUser, useCollection } from "@/firebase";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -79,7 +79,6 @@ const dailyChartConfig = {
 
 export default function ProgressPage() {
     const { user, loading: userLoading } = useUser();
-    const [loading, setLoading] = useState(true);
     const [progressData, setProgressData] = useState<ProgressItem[]>([]);
     const [monthlyChartData, setMonthlyChartData] = useState<MonthlyChartDataItem[]>([]);
     const [dailyChartData, setDailyChartData] = useState<DailyChartDataItem[]>([]);
@@ -87,144 +86,129 @@ export default function ProgressPage() {
     const [badges, setBadges] = useState<Badge[]>([]);
     const [streak, setStreak] = useState(0);
 
+    const plansQuery = useMemo(() => {
+        if (!user) return null;
+        return query(collection(db, "studyPlans"), where("userId", "==", user.uid));
+    }, [user]);
+
+    const { data: plans, loading: plansLoading } = useCollection<StudyPlan>(plansQuery);
+
     useEffect(() => {
-        if (userLoading) return;
-        if (!user) {
-            setLoading(false);
-            return;
-        }
+        if (!plans) return;
 
-        async function fetchProgress() {
-            setLoading(true);
-            try {
-                const q = query(collection(db, "studyPlans"), where("userId", "==", user.uid));
-                const querySnapshot = await getDocs(q);
-                const plans = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data(),
-                })) as StudyPlan[];
+        const today = startOfDay(new Date());
 
-                const today = startOfDay(new Date());
-
-                let allCompletedItems: ScheduleItem[] = [];
-                plans.forEach(plan => {
-                    plan.schedule.forEach(item => {
-                        if (item.status === 'completed') {
-                            allCompletedItems.push(item);
-                        }
-                    });
-                });
-
-                // Calculate Subject Progress
-                const newProgressData = plans.map(plan => {
-                    let completed = 0;
-                    let missed = 0;
-                    let pending = 0;
-
-                    plan.schedule.forEach(item => {
-                        const itemDate = startOfDay(parseISO(item.date));
-                        if (item.status === 'completed') {
-                            completed++;
-                        } else if (item.status === 'missed') {
-                            missed++;
-                        } else if (isPast(itemDate) && !isToday(itemDate) && item.status === 'pending') {
-                            // Also count pending tasks from the past as missed for stats
-                            missed++;
-                        } else {
-                            pending++;
-                        }
-                    });
-
-                    const totalTasks = plan.schedule.length;
-                    if (totalTasks === 0) {
-                        return { subject: plan.topic, value: 0, completed: 0, missed: 0, pending: 0 };
-                    }
-                    
-                    const value = totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
-                    return { subject: plan.topic, value, completed, missed, pending };
-                });
-                setProgressData(newProgressData);
-
-                // --- Chart Data Calculations ---
-
-                // Monthly Data
-                const monthlyTasks: {[key: string]: number} = {
-                    "Jan": 0, "Feb": 0, "Mar": 0, "Apr": 0, "May": 0, "Jun": 0,
-                    "Jul": 0, "Aug": 0, "Sep": 0, "Oct": 0, "Nov": 0, "Dec": 0,
-                };
-
-                const completedDates = new Set<string>();
-                
-                allCompletedItems.forEach(item => {
-                    const itemDate = parseISO(item.date);
-                    const monthName = format(itemDate, 'MMM');
-                    monthlyTasks[monthName]++;
-                    completedDates.add(item.date);
-                });
-
-                const newMonthlyChartData = Object.entries(monthlyTasks).map(([month, tasks]) => ({ month, tasks }));
-                setMonthlyChartData(newMonthlyChartData);
-
-                // Daily Data (Last 14 days)
-                const fourteenDaysAgo = subDays(today, 13);
-                const dateInterval = eachDayOfInterval({ start: fourteenDaysAgo, end: today });
-                const newDailyChartData = dateInterval.map(day => {
-                    const formattedDate = format(day, 'yyyy-MM-dd');
-                    const tasksCount = allCompletedItems.filter(item => item.date === formattedDate).length;
-                    return { date: format(day, 'MMM d'), tasks: tasksCount };
-                });
-                setDailyChartData(newDailyChartData);
-
-
-                // Calculate Streak
-                const sortedDates = Array.from(completedDates).map(d => startOfDay(parseISO(d))).sort((a,b) => b.getTime() - a.getTime());
-                let currentStreak = 0;
-                if(sortedDates.length > 0) {
-                    let lastDate = today;
-                    // Check if the most recent completion was today or yesterday
-                    if (isToday(sortedDates[0]) || differenceInCalendarDays(lastDate, sortedDates[0]) === 1) {
-                        currentStreak = 1;
-                        lastDate = sortedDates[0];
-                        for(let i = 1; i < sortedDates.length; i++) {
-                            const diff = differenceInCalendarDays(lastDate, sortedDates[i]);
-                            if (diff === 1) {
-                                currentStreak++;
-                                lastDate = sortedDates[i];
-                            } else if (diff > 1) {
-                                break; // Streak is broken
-                            }
-                            // if diff is 0, it's the same day, so we don't increment but continue checking
-                        }
-                    }
+        let allCompletedItems: ScheduleItem[] = [];
+        plans.forEach(plan => {
+            plan.schedule.forEach(item => {
+                if (item.status === 'completed') {
+                    allCompletedItems.push(item);
                 }
-                setStreak(currentStreak);
+            });
+        });
 
-                // Calculate Badges
-                const earnedBadges: Badge[] = [
-                    { name: "Topic Explorer", description: "Start study plans for 3+ different topics.", icon: Leaf, earned: plans.length >= 3 },
-                    { name: "Quick Starter", description: "Complete a task on the first day of a study plan.", icon: Zap, earned: plans.some(p => p.schedule.some(i => i.status === 'completed' && i.day === 'Day 1')) },
-                    { name: "Consistent Learner", description: "Maintain a 3-day study streak.", icon: ShieldCheck, earned: currentStreak >= 3 },
-                    { name: "Streak Master", description: "Maintain a 7-day study streak.", icon: Star, earned: currentStreak >= 7 },
-                    { name: "Plan Completer", description: "Complete your first study plan (all tasks).", icon: Trophy, earned: newProgressData.some(p => p.value === 100) },
-                ];
-                setBadges(earnedBadges);
+        // Calculate Subject Progress
+        const newProgressData = plans.map(plan => {
+            let completed = 0;
+            let missed = 0;
+            let pending = 0;
 
-                // Create dynamic summary for StudyTipsGenerator
-                const progressSummary = newProgressData.map(p => `${p.subject}: ${p.value}% completion (${p.completed} done, ${p.missed} missed)`).join(', ');
-                const overallCompletion = newProgressData.length > 0 ? Math.round(newProgressData.reduce((acc, p) => acc + p.value, 0) / newProgressData.length) : 0;
-                setSummary(`Overall progress is at ${overallCompletion}%. Current study streak is ${currentStreak} days. Progress breakdown: ${progressSummary}.`);
+            plan.schedule.forEach(item => {
+                const itemDate = startOfDay(parseISO(item.date));
+                if (item.status === 'completed') {
+                    completed++;
+                } else if (item.status === 'missed') {
+                    missed++;
+                } else if (isPast(itemDate) && !isToday(itemDate) && item.status === 'pending') {
+                    // Also count pending tasks from the past as missed for stats
+                    missed++;
+                } else {
+                    pending++;
+                }
+            });
 
-            } catch (error) {
-                console.error("Error fetching progress data: ", error);
-            } finally {
-                setLoading(false);
+            const totalTasks = plan.schedule.length;
+            if (totalTasks === 0) {
+                return { subject: plan.topic, value: 0, completed: 0, missed: 0, pending: 0 };
+            }
+            
+            const value = totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
+            return { subject: plan.topic, value, completed, missed, pending };
+        });
+        setProgressData(newProgressData);
+
+        // --- Chart Data Calculations ---
+
+        // Monthly Data
+        const monthlyTasks: {[key: string]: number} = {
+            "Jan": 0, "Feb": 0, "Mar": 0, "Apr": 0, "May": 0, "Jun": 0,
+            "Jul": 0, "Aug": 0, "Sep": 0, "Oct": 0, "Nov": 0, "Dec": 0,
+        };
+
+        const completedDates = new Set<string>();
+        
+        allCompletedItems.forEach(item => {
+            const itemDate = parseISO(item.date);
+            const monthName = format(itemDate, 'MMM');
+            monthlyTasks[monthName]++;
+            completedDates.add(item.date);
+        });
+
+        const newMonthlyChartData = Object.entries(monthlyTasks).map(([month, tasks]) => ({ month, tasks }));
+        setMonthlyChartData(newMonthlyChartData);
+
+        // Daily Data (Last 14 days)
+        const fourteenDaysAgo = subDays(today, 13);
+        const dateInterval = eachDayOfInterval({ start: fourteenDaysAgo, end: today });
+        const newDailyChartData = dateInterval.map(day => {
+            const formattedDate = format(day, 'yyyy-MM-dd');
+            const tasksCount = allCompletedItems.filter(item => item.date === formattedDate).length;
+            return { date: format(day, 'MMM d'), tasks: tasksCount };
+        });
+        setDailyChartData(newDailyChartData);
+
+
+        // Calculate Streak
+        const sortedDates = Array.from(completedDates).map(d => startOfDay(parseISO(d))).sort((a,b) => b.getTime() - a.getTime());
+        let currentStreak = 0;
+        if(sortedDates.length > 0) {
+            let lastDate = today;
+            // Check if the most recent completion was today or yesterday
+            if (isToday(sortedDates[0]) || differenceInCalendarDays(lastDate, sortedDates[0]) === 1) {
+                currentStreak = 1;
+                lastDate = sortedDates[0];
+                for(let i = 1; i < sortedDates.length; i++) {
+                    const diff = differenceInCalendarDays(lastDate, sortedDates[i]);
+                    if (diff === 1) {
+                        currentStreak++;
+                        lastDate = sortedDates[i];
+                    } else if (diff > 1) {
+                        break; // Streak is broken
+                    }
+                    // if diff is 0, it's the same day, so we don't increment but continue checking
+                }
             }
         }
+        setStreak(currentStreak);
 
-        fetchProgress();
-    }, [user, userLoading]);
+        // Calculate Badges
+        const earnedBadges: Badge[] = [
+            { name: "Topic Explorer", description: "Start study plans for 3+ different topics.", icon: Leaf, earned: plans.length >= 3 },
+            { name: "Quick Starter", description: "Complete a task on the first day of a study plan.", icon: Zap, earned: plans.some(p => p.schedule.some(i => i.status === 'completed' && i.day === 'Day 1')) },
+            { name: "Consistent Learner", description: "Maintain a 3-day study streak.", icon: ShieldCheck, earned: currentStreak >= 3 },
+            { name: "Streak Master", description: "Maintain a 7-day study streak.", icon: Star, earned: currentStreak >= 7 },
+            { name: "Plan Completer", description: "Complete your first study plan (all tasks).", icon: Trophy, earned: newProgressData.some(p => p.value === 100) },
+        ];
+        setBadges(earnedBadges);
 
-    if (loading || userLoading) {
+        // Create dynamic summary for StudyTipsGenerator
+        const progressSummary = newProgressData.map(p => `${p.subject}: ${p.value}% completion (${p.completed} done, ${p.missed} missed)`).join(', ');
+        const overallCompletion = newProgressData.length > 0 ? Math.round(newProgressData.reduce((acc, p) => acc + p.value, 0) / newProgressData.length) : 0;
+        setSummary(`Overall progress is at ${overallCompletion}%. Current study streak is ${currentStreak} days. Progress breakdown: ${progressSummary}.`);
+
+    }, [plans]);
+
+    if (userLoading || plansLoading) {
         return (
           <div className="flex justify-center items-center h-[calc(100vh-8rem)]">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
