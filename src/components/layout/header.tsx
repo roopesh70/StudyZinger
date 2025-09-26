@@ -12,6 +12,7 @@ import { signOut } from "firebase/auth";
 import { useAuth } from "@/firebase";
 import Link from "next/link";
 import { Notifications } from "./notifications";
+import { Skeleton } from "../ui/skeleton";
 
 const titles: { [key: string]: string } = {
   "/": "Home",
@@ -31,7 +32,8 @@ export function Header() {
   const handleLogout = async () => {
     if (auth) {
       await signOut(auth);
-      router.push('/');
+      // Full page reload to ensure auth state is cleared everywhere.
+      window.location.href = '/login';
     }
   };
 
@@ -45,7 +47,9 @@ export function Header() {
       <div className="flex-grow" />
       <ThemeToggle />
       <Notifications />
-      { !loading && (
+      { loading ? (
+        <Skeleton className="h-8 w-8 rounded-full" />
+      ) : (
         !user ? (
             <Button asChild>
                 <Link href="/login">Login</Link>

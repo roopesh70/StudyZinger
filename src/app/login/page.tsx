@@ -2,7 +2,7 @@
 
 'use client';
 import { useState, Suspense, useEffect } from 'react';
-import { useAuth } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import {
   GoogleAuthProvider,
   signInWithRedirect,
@@ -52,6 +52,23 @@ const registerSchema = z.object({
     .min(6, { message: 'Password must be at least 6 characters.' }),
 });
 
+const handleSuccessfulAuth = async (user: any) => {
+  const userRef = doc(db, 'users', user.uid);
+  // This operation is "fire and forget" from the user's perspective.
+  // The redirection logic is handled by the useUser hook.
+  await setDoc(
+    userRef,
+    {
+      displayName: user.displayName,
+      email: user.email,
+      photoURL: user.photoURL,
+      lastLogin: serverTimestamp(),
+    },
+    { merge: true }
+  );
+};
+
+
 function LoginContent() {
   const auth = useAuth();
   const router = useRouter();
@@ -61,51 +78,42 @@ function LoginContent() {
     google: false,
     email: false,
     reset: false,
-    redirect: true, // Start in a loading state for the redirect check
+    redirect: true, 
   });
-
-  const handleSuccessfulAuth = async (user: any) => {
-    const userRef = doc(db, 'users', user.uid);
-    await setDoc(
-      userRef,
-      {
-        displayName: user.displayName,
-        email: user.email,
-        photoURL: user.photoURL,
-        lastLogin: serverTimestamp(),
-      },
-      { merge: true }
-    );
-
-    const returnTo = sessionStorage.getItem('returnTo') || '/';
-    sessionStorage.removeItem('returnTo');
-    // Use window.location.href to force a full page reload
-    // This ensures the Firebase auth state is updated before the next page loads
-    window.location.href = returnTo;
-  };
   
   useEffect(() => {
     if (!auth) return;
 
+    // This effect handles the result of a Google sign-in redirect.
     getRedirectResult(auth)
       .then((result) => {
         if (result && result.user) {
           // User has successfully signed in via redirect.
+          // Don't redirect here. The useUser hook will handle it.
           handleSuccessfulAuth(result.user);
-        } else {
-           // No redirect result, so we're not in a loading state for it anymore.
-           setLoading(prev => ({...prev, redirect: false}));
         }
       })
       .catch((error) => {
         console.error("Error getting redirect result:", error);
-        toast({
-          variant: 'destructive',
-          title: 'Sign-In Failed',
-          description: "There was an error during the Google Sign-In process."
-        });
-        setLoading(prev => ({...prev, redirect: false}));
+        if (error.code === 'auth/unauthorized-domain') {
+           toast({
+             variant: 'destructive',
+             title: 'Sign-In Failed',
+             description: "This domain is not authorized for authentication. Please add it to the Firebase console.",
+             duration: 10000,
+           });
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Sign-In Failed',
+            description: "There was an error during the Google Sign-In process."
+          });
+        }
+      }).finally(() => {
+         setLoading(prev => ({...prev, redirect: false}));
       });
+  // The empty dependency array is crucial here.
+  // It ensures this effect runs only once when the component mounts.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth]);
 
@@ -116,11 +124,11 @@ function LoginContent() {
 
     const provider = new GoogleAuthProvider();
     const returnTo = searchParams.get('returnTo') || '/';
-
     sessionStorage.setItem('returnTo', returnTo);
 
     try {
       await signInWithRedirect(auth, provider);
+      // The page will redirect to Google, then back. The useEffect hook will handle the result.
     } catch (error) {
       console.error('Error during sign-in redirect:', error);
       setLoading(prev => ({ ...prev, google: false }));
@@ -148,6 +156,7 @@ function LoginContent() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       await handleSuccessfulAuth(userCredential.user);
+      // Don't redirect here. The useUser hook will handle it.
     } catch (error) {
       console.error('Error signing in with email:', error);
       toast({
@@ -175,6 +184,7 @@ function LoginContent() {
         displayName: values.name,
       });
       await handleSuccessfulAuth(userCredential.user);
+      // Don't redirect here. The useUser hook will handle it.
     } catch (error: any) {
       console.error('Error registering with email:', error);
       let description = 'An unexpected error occurred. Please try again.';
@@ -219,10 +229,11 @@ function LoginContent() {
     }
   };
 
-  if (!auth || loading.redirect) {
+  if (loading.redirect) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <span className="ml-4">Finalizing login...</span>
       </div>
     );
   }
@@ -420,11 +431,31 @@ function LoginContent() {
 
 
 export default function LoginPage() {
+  const { user, loading } = useUser();
+  const router = useRouter();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (user) {
+    // This part should not be strictly necessary if the useUser hook handles redirection,
+    // but it's a good fallback.
+    router.replace('/');
+    return (
+        <div className="flex min-h-screen items-center justify-center">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        </div>
+    );
+  }
+
   return (
     <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>}>
       <LoginContent />
     </Suspense>
   );
 }
-
-    
