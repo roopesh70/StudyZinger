@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { db } from "@/lib/firebase";
-import { collection, Timestamp, query, where } from "firebase/firestore";
+import { collection, Timestamp, query, where, orderBy } from "firebase/firestore";
 import { isPast, parseISO, differenceInCalendarDays, isToday, subDays, startOfDay, format, eachDayOfInterval } from "date-fns";
 import { Loader2, ShieldCheck, Star, Zap, Trophy, Leaf } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -88,20 +88,21 @@ export default function ProgressPage() {
 
     const plansQuery = useMemo(() => {
         if (!user) return null;
-        return query(collection(db, "studyPlans"), where("userId", "==", user.uid));
+        return query(
+            collection(db, "studyPlans"), 
+            where("userId", "==", user.uid), 
+            orderBy("createdAt", "desc")
+        );
     }, [user]);
 
     const { data: plans, loading: plansLoading } = useCollection<StudyPlan>(
-        plansQuery,
-        {
-            orderBy: ["createdAt", "asc"]
-        }
+        plansQuery
     );
 
     useEffect(() => {
         if (!plans) return;
         
-        const reversedPlans = [...plans].reverse();
+        const reversedPlans = [...plans]; // Data is already sorted newest first
 
         const today = startOfDay(new Date());
 
