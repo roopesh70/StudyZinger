@@ -141,13 +141,17 @@ export default function TargetsPage() {
   
   const plansQuery = useMemo(() => {
     if (!user) return null;
-    return query(
-        collection(db, "studyPlans"), 
-        where("userId", "==", user.uid)
-    );
+    return query(collection(db, "studyPlans"));
   }, [user]);
 
-  const { data: studyPlans, loading: plansLoading } = useCollection<StudyPlan>(plansQuery, { orderBy: ["createdAt", "desc"] });
+  const { data: studyPlans, loading: plansLoading } = useCollection<StudyPlan>(
+    plansQuery,
+    {
+      where: ["userId", "==", user?.uid || ''],
+      orderBy: ["createdAt", "desc"],
+    }
+  );
+
   const [localStudyPlans, setLocalStudyPlans] = useState<StudyPlan[]>([]);
   
    useEffect(() => {
@@ -259,7 +263,7 @@ export default function TargetsPage() {
         });
   };
 
-  if (userLoading || plansLoading) {
+  if (userLoading || (plansLoading && !studyPlans) ) {
     return (
       <div className="flex justify-center items-center h-[calc(100vh-8rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -435,7 +439,7 @@ export default function TargetsPage() {
                         </div>
                     </div>
                 </AccordionContent>
-              </Card>
+                </Card>
             </AccordionItem>
             )
           })}
@@ -462,3 +466,4 @@ export default function TargetsPage() {
   );
 }
 
+    
