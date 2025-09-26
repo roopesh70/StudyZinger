@@ -3,49 +3,32 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ---------- Helper functions ----------
+    // Helper function to check if a user is signed in
     function isSignedIn() {
       return request.auth != null;
     }
+
+    // Helper function to check if the signed-in user is the owner of the document
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
 
-    // ---------- users collection ----------
+    // Rules for the 'users' collection
     match /users/{userId} {
-      // Each user can read or write only their own document.
+      // Users can read and write to their own user document
       allow read, write: if isSignedIn() && isOwner(userId);
 
-      // notifications subcollection
+      // Rules for the 'notifications' subcollection
       match /notifications/{notificationId} {
-        // Owner can read or update their own notifications.
-        allow read, update: if isSignedIn() && isOwner(userId);
-        // Cron job or owner can create.
-        allow create: if request.auth.uid == 'default-user'
-                      || (isSignedIn() && isOwner(userId));
+        // Users can read, create, and update their own notifications
+        allow read, create, update: if isSignedIn() && isOwner(userId);
       }
-    }
 
-    // ---------- studyPlans collection ----------
-    match /studyPlans/{planId} {
-      // Allow listing if the user is signed in.
-      // Clients must query with where("userId", "==", auth.uid).
-      allow list: if isSignedIn();
-
-      // Allow reading a single doc only if the user owns it.
-      allow get: if isSignedIn() && isOwner(resource.data.userId);
-
-      // Allow creating if the new doc's userId matches the signer.
-      allow create: if isSignedIn()
-                    && isOwner(request.resource.data.userId);
-
-      // Allow updating if the signer owns it or is the cron user.
-      allow update: if isSignedIn()
-                    && (isOwner(resource.data.userId)
-                        || request.auth.uid == 'default-user');
-
-      // Allow deleting only if the signer owns it.
-      allow delete: if isSignedIn() && isOwner(resource.data.userId);
+      // Rules for the 'studyPlans' subcollection
+      match /studyPlans/{planId} {
+        // Users can perform all actions (read, write, delete) on their own study plans
+        allow read, write, delete: if isSignedIn() && isOwner(userId);
+      }
     }
   }
 }
