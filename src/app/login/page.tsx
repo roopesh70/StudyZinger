@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, Suspense, useEffect } from 'react';
 import { useAuth } from '@/firebase';
@@ -232,183 +233,187 @@ function LoginContent() {
         <GraduationCap className="size-10 text-primary" />
         <h1 className="font-script text-6xl text-primary">zinger</h1>
       </div>
-      <Tabs defaultValue="login" className="w-full max-w-sm">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="login">Sign In</TabsTrigger>
-          <TabsTrigger value="register">Create Account</TabsTrigger>
-        </TabsList>
+      <div className="w-full max-w-sm">
+        <Tabs defaultValue="login" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="login">Sign In</TabsTrigger>
+            <TabsTrigger value="register">Create Account</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="login">
-          <Card>
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl">Welcome Back!</CardTitle>
-              <CardDescription>
-                Sign in to access your personalized study plans.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Form {...loginForm}>
-                <form
-                  onSubmit={loginForm.handleSubmit(handleEmailLogin)}
-                  className="space-y-4"
-                >
-                  <FormField
-                    control={loginForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="you@example.com"
-                            {...field}
-                            type="email"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={loginForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="flex justify-between">
-                         <FormLabel>Password</FormLabel>
-                         <Button type="button" variant="link" size="sm" className="h-auto p-0" onClick={handlePasswordReset} disabled={loading.reset}>
-                           {loading.reset ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Forgot Password?'}
-                         </Button>
-                        </div>
-                        <FormControl>
-                          <Input
-                            placeholder="••••••••"
-                            {...field}
-                            type="password"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full" disabled={loading.email}>
-                    {loading.email && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Sign In
-                  </Button>
-                </form>
-              </Form>
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    Or continue with
-                  </span>
-                </div>
-              </div>
-              <Button
-                onClick={handleGoogleLogin}
-                className="w-full"
-                variant="outline"
-                disabled={loading.google || loading.redirect}
-              >
-                {loading.google || loading.redirect ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <svg
-                    className="mr-2 h-4 w-4"
-                    aria-hidden="true"
-                    focusable="false"
-                    data-prefix="fab"
-                    data-icon="google"
-                    role="img"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 488 512"
+          <TabsContent value="login">
+            <Card>
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl">Welcome Back!</CardTitle>
+                <CardDescription>
+                  Sign in to access your personalized study plans.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Form {...loginForm}>
+                  <form
+                    onSubmit={loginForm.handleSubmit(handleEmailLogin)}
+                    className="space-y-4"
                   >
-                    <path
-                      fill="currentColor"
-                      d="M488 261.8C488 403.3 381.5 512 244 512 109.8 512 0 402.2 0 261.8 0 120.3 109.8 11.8 244 11.8c70.3 0 129.8 27.8 175.3 74.3l-66.2 63.8C321.3 122.3 286.2 101.8 244 101.8c-63.9 0-116.3 52.3-116.3 116.3s52.4 116.3 116.3 116.3c69.1 0 106.3-43.9 111.3-66.9H244v-83.8h235.9c2.3 12.7 3.6 26.4 3.6 40.9z"
-                    ></path>
-                  </svg>
-                )}
-                Google
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                    <FormField
+                      control={loginForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="you@example.com"
+                              {...field}
+                              type="email"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={loginForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="flex justify-between">
+                          <FormLabel>Password</FormLabel>
+                          <Button type="button" variant="link" size="sm" className="h-auto p-0" onClick={handlePasswordReset} disabled={loading.reset}>
+                            {loading.reset ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Forgot Password?'}
+                          </Button>
+                          </div>
+                          <FormControl>
+                            <Input
+                              placeholder="••••••••"
+                              {...field}
+                              type="password"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" className="w-full" disabled={loading.email}>
+                      {loading.email && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Sign In
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <TabsContent value="register">
-          <Card>
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl">Create an Account</CardTitle>
-              <CardDescription>
-                Get started with your AI-powered study partner today.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...registerForm}>
-                <form
-                  onSubmit={registerForm.handleSubmit(handleEmailRegister)}
-                  className="space-y-4"
-                >
-                  <FormField
-                    control={registerForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Your Name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={registerForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="you@example.com"
-                            {...field}
-                            type="email"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={registerForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="••••••••"
-                            {...field}
-                            type="password"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full" disabled={loading.email}>
-                    {loading.email && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Create Account
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="register">
+            <Card>
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl">Create an Account</CardTitle>
+                <CardDescription>
+                  Get started with your AI-powered study partner today.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...registerForm}>
+                  <form
+                    onSubmit={registerForm.handleSubmit(handleEmailRegister)}
+                    className="space-y-4"
+                  >
+                    <FormField
+                      control={registerForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Your Name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="you@example.com"
+                              {...field}
+                              type="email"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="••••••••"
+                              {...field}
+                              type="password"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" className="w-full" disabled={loading.email}>
+                      {loading.email && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Create Account
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+        
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">
+              Or
+            </span>
+          </div>
+        </div>
+
+        <Button
+          onClick={handleGoogleLogin}
+          className="w-full"
+          variant="outline"
+          disabled={loading.google || loading.redirect}
+        >
+          {loading.google || loading.redirect ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <svg
+              className="mr-2 h-4 w-4"
+              aria-hidden="true"
+              focusable="false"
+              data-prefix="fab"
+              data-icon="google"
+              role="img"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 488 512"
+            >
+              <path
+                fill="currentColor"
+                d="M488 261.8C488 403.3 381.5 512 244 512 109.8 512 0 402.2 0 261.8 0 120.3 109.8 11.8 244 11.8c70.3 0 129.8 27.8 175.3 74.3l-66.2 63.8C321.3 122.3 286.2 101.8 244 101.8c-63.9 0-116.3 52.3-116.3 116.3s52.4 116.3 116.3 116.3c69.1 0 106.3-43.9 111.3-66.9H244v-83.8h235.9c2.3 12.7 3.6 26.4 3.6 40.9z"
+              ></path>
+            </svg>
+          )}
+          Continue with Google
+        </Button>
+      </div>
     </main>
   );
 }
