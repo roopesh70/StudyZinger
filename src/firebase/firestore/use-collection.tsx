@@ -40,7 +40,9 @@ export function useCollection<T extends DocumentData>(
     if (!collectionQuery) return null;
 
     let q: Query = collectionQuery;
-
+    
+    // The order of these query composers matters.
+    // `where` must come before `orderBy`.
     if (options?.where) {
       q = query(q, where(...options.where));
     }
@@ -51,13 +53,13 @@ export function useCollection<T extends DocumentData>(
       q = query(q, limit(options.limit));
     }
     return q;
-  }, [collectionQuery, options?.orderBy, options?.limit, options?.where]);
+  }, [collectionQuery, options?.where, options?.orderBy, options?.limit]);
 
 
   useEffect(() => {
     if (!db || !finalQuery) {
-      setData(null);
       setLoading(false);
+      setData(null);
       return;
     }
 
@@ -75,13 +77,20 @@ export function useCollection<T extends DocumentData>(
         setError(null);
       },
       (err: FirestoreError) => {
-        const path = 'path' in finalQuery ? finalQuery.path : 'unknown';
-        const permissionError = new FirestorePermissionError({
-            path: path,
-            operation: 'list',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        setError(permissionError);
+        // Only emit a permission error if the error code is 'permission-denied'
+        if (err.code === 'permission-denied') {
+            const path = 'path' in finalQuery ? finalQuery.path : 'unknown';
+            const permissionError = new FirestorePermissionError({
+                path: path,
+                operation: 'list',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            setError(permissionError);
+        } else {
+            // Handle other types of Firestore errors if necessary
+            console.error('Firestore error:', err);
+            setError(err);
+        }
         setLoading(false);
       }
     );
