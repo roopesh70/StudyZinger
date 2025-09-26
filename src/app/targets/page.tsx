@@ -150,7 +150,7 @@ export default function TargetsPage() {
   const { data: studyPlans, loading: plansLoading } = useCollection<StudyPlan>(
     plansQuery,
     {
-        orderBy: ["createdAt", "asc"]
+        orderBy: ["createdAt", "desc"]
     }
   );
 
@@ -294,7 +294,7 @@ export default function TargetsPage() {
         </p>
       ) : (
         <Accordion type="single" collapsible className="w-full space-y-4">
-          {[...localStudyPlans].reverse().map(plan => {
+          {localStudyPlans.map(plan => {
             const todaysTopic = plan.schedule.find(item => isToday(parseISO(item.date)))?.topic;
             const completedTasks = plan.schedule.filter(i => i.status === 'completed').length;
             const totalTasks = plan.schedule.length;
