@@ -296,7 +296,7 @@ export default function TargetsPage() {
             const circleCircumference = 2 * Math.PI * 20; // 2 * pi * radius
             
             return (
-            <AccordionItem value={plan.id} key={plan.id} className="border-0" asChild>
+            <AccordionItem value={plan.id} key={plan.id} className="border-0">
               <Card>
                 <AccordionTrigger className="w-full text-left p-6 hover:no-underline group">
                    <div className="flex items-center gap-6 flex-1">
@@ -461,3 +461,5 @@ export default function TargetsPage() {
     </>
   );
 }
+
+    
