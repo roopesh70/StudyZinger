@@ -88,10 +88,13 @@ export default function ProgressPage() {
 
     const plansQuery = useMemo(() => {
         if (!user) return null;
-        return query(collection(db, "studyPlans"), where("userId", "==", user.uid));
+        return query(collection(db, "studyPlans"));
     }, [user]);
 
-    const { data: plans, loading: plansLoading } = useCollection<StudyPlan>(plansQuery);
+    const { data: plans, loading: plansLoading } = useCollection<StudyPlan>(plansQuery, {
+        where: ["userId", "==", user?.uid || ''],
+        orderBy: ["createdAt", "desc"]
+    });
 
     useEffect(() => {
         if (!plans) return;

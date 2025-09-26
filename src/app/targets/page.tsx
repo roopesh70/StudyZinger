@@ -148,7 +148,7 @@ export default function TargetsPage() {
     plansQuery,
     {
       where: ["userId", "==", user?.uid || ''],
-      orderBy: ["createdAt", "desc"],
+      orderBy: ["createdAt", "asc"],
     }
   );
 
@@ -292,7 +292,7 @@ export default function TargetsPage() {
         </p>
       ) : (
         <Accordion type="single" collapsible className="w-full space-y-4">
-          {localStudyPlans.map(plan => {
+          {[...localStudyPlans].reverse().map(plan => {
             const todaysTopic = plan.schedule.find(item => isToday(parseISO(item.date)))?.topic;
             const completedTasks = plan.schedule.filter(i => i.status === 'completed').length;
             const totalTasks = plan.schedule.length;
@@ -465,5 +465,3 @@ export default function TargetsPage() {
     </>
   );
 }
-
-    
