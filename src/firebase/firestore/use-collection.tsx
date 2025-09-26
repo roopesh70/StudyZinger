@@ -35,12 +35,13 @@ export function useCollection<T extends DocumentData>(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<FirestoreError | FirestorePermissionError | null>(null);
 
-  // Memoize the query to prevent re-renders
+  // Memoize the query to prevent re-renders.
+  // We stringify the options to create a stable dependency.
   const finalQuery = useMemo(() => {
     if (!collectionQuery) return null;
 
     let q: Query = collectionQuery;
-    
+
     // The order of these query composers matters.
     // `where` must come before `orderBy`.
     if (options?.where) {
@@ -53,7 +54,7 @@ export function useCollection<T extends DocumentData>(
       q = query(q, limit(options.limit));
     }
     return q;
-  }, [collectionQuery, options?.where, options?.orderBy, options?.limit]);
+  }, [collectionQuery, JSON.stringify(options?.where), JSON.stringify(options?.orderBy), options?.limit]);
 
 
   useEffect(() => {
@@ -100,3 +101,4 @@ export function useCollection<T extends DocumentData>(
 
   return { data, loading, error };
 }
+
