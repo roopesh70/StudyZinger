@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from "react";
 import { ScheduleGenerator } from "@/components/schedule-generator";
 import { ProgressOverview } from "@/components/progress-overview";
 import { useUser, useCollection } from "@/firebase";
-import { collection, query, where } from "firebase/firestore";
+import { collection, query, where, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { parseISO, isPast, isToday } from "date-fns";
 
@@ -29,7 +29,11 @@ export default function DashboardPage() {
 
   const plansQuery = useMemo(() => {
     if (!user) return null;
-    return query(collection(db, "studyPlans"), where("userId", "==", user.uid));
+    return query(
+        collection(db, "studyPlans"), 
+        where("userId", "==", user.uid),
+        orderBy("createdAt", "desc")
+    );
   }, [user]);
 
   const { data: plans, loading } = useCollection<StudyPlan>(plansQuery);
