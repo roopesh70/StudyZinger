@@ -1,6 +1,6 @@
 
 'use client';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useAuth } from '@/firebase';
 import {
   GoogleAuthProvider,
@@ -50,7 +50,7 @@ const registerSchema = z.object({
     .min(6, { message: 'Password must be at least 6 characters.' }),
 });
 
-export default function LoginPage() {
+function LoginContent() {
   const auth = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -381,5 +381,14 @@ export default function LoginPage() {
         </TabsContent>
       </Tabs>
     </main>
+  );
+}
+
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>}>
+      <LoginContent />
+    </Suspense>
   );
 }
