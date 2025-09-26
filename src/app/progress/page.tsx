@@ -94,17 +94,19 @@ export default function ProgressPage() {
     const { data: plans, loading: plansLoading } = useCollection<StudyPlan>(
         plansQuery,
         {
-            orderBy: ["createdAt", "desc"]
+            orderBy: ["createdAt", "asc"]
         }
     );
 
     useEffect(() => {
         if (!plans) return;
+        
+        const reversedPlans = [...plans].reverse();
 
         const today = startOfDay(new Date());
 
         let allCompletedItems: ScheduleItem[] = [];
-        plans.forEach(plan => {
+        reversedPlans.forEach(plan => {
             plan.schedule.forEach(item => {
                 if (item.status === 'completed') {
                     allCompletedItems.push(item);
@@ -113,7 +115,7 @@ export default function ProgressPage() {
         });
 
         // Calculate Subject Progress
-        const newProgressData = plans.map(plan => {
+        const newProgressData = reversedPlans.map(plan => {
             let completed = 0;
             let missed = 0;
             let pending = 0;
@@ -198,8 +200,8 @@ export default function ProgressPage() {
 
         // Calculate Badges
         const earnedBadges: Badge[] = [
-            { name: "Topic Explorer", description: "Start study plans for 3+ different topics.", icon: Leaf, earned: plans.length >= 3 },
-            { name: "Quick Starter", description: "Complete a task on the first day of a study plan.", icon: Zap, earned: plans.some(p => p.schedule.some(i => i.status === 'completed' && i.day === 'Day 1')) },
+            { name: "Topic Explorer", description: "Start study plans for 3+ different topics.", icon: Leaf, earned: reversedPlans.length >= 3 },
+            { name: "Quick Starter", description: "Complete a task on the first day of a study plan.", icon: Zap, earned: reversedPlans.some(p => p.schedule.some(i => i.status === 'completed' && i.day === 'Day 1')) },
             { name: "Consistent Learner", description: "Maintain a 3-day study streak.", icon: ShieldCheck, earned: currentStreak >= 3 },
             { name: "Streak Master", description: "Maintain a 7-day study streak.", icon: Star, earned: currentStreak >= 7 },
             { name: "Plan Completer", description: "Complete your first study plan (all tasks).", icon: Trophy, earned: newProgressData.some(p => p.value === 100) },
