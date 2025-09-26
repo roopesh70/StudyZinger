@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import { useAuth } from '@/firebase';
 import {
-  getRedirectResult,
   GoogleAuthProvider,
   signInWithRedirect,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   updateProfile,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,7 +19,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Loader2, GraduationCap } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -33,8 +33,9 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { db } from '@/lib/firebase';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -51,11 +52,13 @@ const registerSchema = z.object({
 
 export default function LoginPage() {
   const auth = useAuth();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [loading, setLoading] = useState<{ [key: string]: boolean }>({
     google: false,
     email: false,
+    reset: false,
   });
 
   const handleGoogleLogin = async () => {
@@ -68,6 +71,7 @@ export default function LoginPage() {
     sessionStorage.setItem('returnTo', returnTo);
 
     try {
+      // We use a redirect for Google provider, so we'll land on the callback page
       await signInWithRedirect(auth, provider);
     } catch (error) {
       console.error('Error during sign-in redirect:', error);
@@ -90,12 +94,30 @@ export default function LoginPage() {
     defaultValues: { name: '', email: '', password: '' },
   });
 
+  const handleSuccessfulAuth = async (user: any) => {
+    const userRef = doc(db, 'users', user.uid);
+    await setDoc(
+      userRef,
+      {
+        displayName: user.displayName,
+        email: user.email,
+        photoURL: user.photoURL,
+        lastLogin: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    const returnTo = searchParams.get('returnTo') || '/';
+    router.replace(returnTo);
+  };
+
+
   const handleEmailLogin = async (values: z.infer<typeof loginSchema>) => {
     if (!auth) return;
     setLoading(prev => ({ ...prev, email: true }));
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
-      // Redirect is handled by the auth state listener in the callback page
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      await handleSuccessfulAuth(userCredential.user);
     } catch (error) {
       console.error('Error signing in with email:', error);
       toast({
@@ -122,7 +144,7 @@ export default function LoginPage() {
       await updateProfile(userCredential.user, {
         displayName: values.name,
       });
-      // Redirect is handled by the auth state listener in the callback page
+      await handleSuccessfulAuth(userCredential.user);
     } catch (error: any) {
       console.error('Error registering with email:', error);
       let description = 'An unexpected error occurred. Please try again.';
@@ -137,6 +159,33 @@ export default function LoginPage() {
       });
     } finally {
       setLoading(prev => ({ ...prev, email: false }));
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    const email = loginForm.getValues('email');
+    if (!email) {
+      loginForm.setError('email', { type: 'manual', message: 'Please enter your email to reset the password.' });
+      return;
+    }
+    if (!auth) return;
+
+    setLoading(prev => ({...prev, reset: true}));
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({
+        title: 'Password Reset Email Sent',
+        description: `An email has been sent to ${email} with instructions to reset your password.`,
+      });
+    } catch (error: any) {
+       console.error('Error sending password reset email:', error);
+       toast({
+        variant: 'destructive',
+        title: 'Password Reset Failed',
+        description: error.message,
+      });
+    } finally {
+      setLoading(prev => ({...prev, reset: false}));
     }
   };
 
@@ -196,7 +245,12 @@ export default function LoginPage() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password</FormLabel>
+                        <div className="flex justify-between">
+                         <FormLabel>Password</FormLabel>
+                         <Button type="button" variant="link" size="sm" className="h-auto p-0" onClick={handlePasswordReset} disabled={loading.reset}>
+                           {loading.reset ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Forgot Password?'}
+                         </Button>
+                        </div>
                         <FormControl>
                           <Input
                             placeholder="••••••••"
@@ -329,5 +383,3 @@ export default function LoginPage() {
     </main>
   );
 }
-
-    

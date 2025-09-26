@@ -1,7 +1,5 @@
 // This page is necessary to handle the client-side redirect from Firebase's
-// getRedirectResult() method. It allows the app to complete the sign-in
-// flow and then redirect the user to the page they were originally trying
-// to access.
+// getRedirectResult() method for OAuth providers like Google.
 'use client';
 
 import { useEffect } from 'react';
@@ -40,14 +38,17 @@ export default function AuthCallbackPage() {
         console.log("getRedirectResult error, probably page reload:", error);
       }
       
-      // Now handle redirection
       const returnTo = sessionStorage.getItem('returnTo') || searchParams.get('returnTo') || '/';
+      
+      // We wait for the auth state to be confirmed before redirecting.
+      // The `useUser` hook will have `loading = false` and a `user` object
+      // once the auth state is resolved.
       if (!loading && user) {
          sessionStorage.removeItem('returnTo');
          router.replace(returnTo);
-      }
-      if (!loading && !user) {
+      } else if (!loading && !user) {
         // If auth process is complete and there's no user, go to login.
+        // This can happen if the user cancels the sign-in with the provider.
         router.replace('/login');
       }
     }
@@ -65,5 +66,3 @@ export default function AuthCallbackPage() {
     </div>
   );
 }
-
-    
