@@ -54,7 +54,8 @@ export function useCollection<T extends DocumentData>(
       q = query(q, limit(options.limit));
     }
     return q;
-  }, [collectionQuery, JSON.stringify(options?.where), JSON.stringify(options?.orderBy), options?.limit]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collectionQuery, JSON.stringify(options)]);
 
 
   useEffect(() => {
@@ -101,4 +102,3 @@ export function useCollection<T extends DocumentData>(
 
   return { data, loading, error };
 }
-
