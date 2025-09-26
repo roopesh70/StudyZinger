@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useUser, useCollection } from '@/firebase';
-import { collection, doc, writeBatch } from 'firebase/firestore';
+import { collection, doc, writeBatch, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Bell, CheckCheck, CircleAlert, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -43,13 +43,13 @@ export function Notifications() {
 
   const notificationsQuery = useMemo(() => {
     if (!user) return null;
-    return collection(db, `users/${user.uid}/notifications`);
+    return query(
+        collection(db, `users/${user.uid}/notifications`),
+        orderBy('createdAt', 'desc')
+    );
   }, [user]);
 
-  const { data: notifications, error } = useCollection<Notification>(
-    notificationsQuery,
-    { orderBy: ['createdAt', 'desc'] }
-  );
+  const { data: notifications, error } = useCollection<Notification>(notificationsQuery);
 
   const unreadCount = notifications?.filter(n => !n.read).length || 0;
 
@@ -152,10 +152,10 @@ export function Notifications() {
                 <div className="flex-1">
                   <p className="text-sm">{notification.message}</p>
                   <p className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(
+                    {notification.createdAt ? formatDistanceToNow(
                       new Date(notification.createdAt.seconds * 1000),
                       { addSuffix: true }
-                    )}
+                    ) : ''}
                   </p>
                 </div>
                 {!notification.read && (

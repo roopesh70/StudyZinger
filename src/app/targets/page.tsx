@@ -363,7 +363,7 @@ export default function TargetsPage() {
                                             <TableHead className="w-[120px]">Date</TableHead>
                                             <TableHead>Topic</TableHead>
                                             <TableHead>Tasks</TableHead>
-                                            <TableHead className="w-[100px]">Status</Table.Head>
+                                            <TableHead className="w-[100px]">Status</TableHead>
                                             <TableHead className="w-[120px]">Action</TableHead>
                                             </TableRow>
                                         </TableHeader>
