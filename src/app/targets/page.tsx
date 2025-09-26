@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { db } from "@/lib/firebase";
-import { collection, query, orderBy, getDocs, Timestamp, doc, updateDoc, deleteDoc, writeBatch, where } from "firebase/firestore";
+import { collection, query, doc, updateDoc, deleteDoc, where, orderBy } from "firebase/firestore";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -46,7 +46,10 @@ interface StudyPlan {
   topic: string;
   notes: string;
   schedule: ScheduleItem[];
-  createdAt: Timestamp;
+  createdAt: {
+    seconds: number;
+    nanoseconds: number;
+  };
   autoDeleteOnCompletion?: boolean;
   userId: string;
 }
@@ -141,14 +144,13 @@ export default function TargetsPage() {
   
   const plansQuery = useMemo(() => {
     if (!user) return null;
-    return query(collection(db, "studyPlans"));
+    return query(collection(db, "studyPlans"), where("userId", "==", user.uid));
   }, [user]);
 
   const { data: studyPlans, loading: plansLoading } = useCollection<StudyPlan>(
     plansQuery,
     {
-      where: ["userId", "==", user?.uid || ''],
-      orderBy: ["createdAt", "asc"],
+        orderBy: ["createdAt", "asc"]
     }
   );
 
