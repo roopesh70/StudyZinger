@@ -5,27 +5,56 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useUser } from '@/firebase';
+import { useUser, useAuth } from '@/firebase';
+import { getRedirectResult } from 'firebase/auth';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { db } from '@/lib/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function AuthCallbackPage() {
   const { user, loading } = useUser();
+  const auth = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const returnTo = searchParams.get('returnTo') || '/';
-
+  
   useEffect(() => {
-    // If the user is loaded and authenticated, redirect them.
-    if (!loading && user) {
-      router.replace(returnTo);
+    async function handleAuth() {
+      if (!auth) return;
+      
+      try {
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+          // New user from redirect
+          const { user } = result;
+           const userRef = doc(db, 'users', user.uid);
+           await setDoc(userRef, {
+             displayName: user.displayName,
+             email: user.email,
+             photoURL: user.photoURL,
+             lastLogin: serverTimestamp()
+           }, { merge: true });
+        }
+      } catch (error) {
+         // This can happen if the page is reloaded, it's usually not a critical error.
+        console.log("getRedirectResult error, probably page reload:", error);
+      }
+      
+      // Now handle redirection
+      const returnTo = sessionStorage.getItem('returnTo') || searchParams.get('returnTo') || '/';
+      if (!loading && user) {
+         sessionStorage.removeItem('returnTo');
+         router.replace(returnTo);
+      }
+      if (!loading && !user) {
+        // If auth process is complete and there's no user, go to login.
+        router.replace('/login');
+      }
     }
-    // If the user is not authenticated after the check,
-    // something went wrong, so send them to the login page.
-    if (!loading && !user) {
-      router.replace('/login');
-    }
-  }, [user, loading, router, returnTo]);
+    
+    handleAuth();
+
+  }, [user, loading, auth, router, searchParams]);
 
   return (
     <div className="flex h-screen w-full flex-col items-center justify-center">
@@ -36,3 +65,5 @@ export default function AuthCallbackPage() {
     </div>
   );
 }
+
+    
