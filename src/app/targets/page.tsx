@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { db } from "@/lib/firebase";
-import { collection, query, doc, updateDoc, deleteDoc, where, orderBy } from "firebase/firestore";
+import { collection, query, doc, updateDoc, deleteDoc, orderBy } from "firebase/firestore";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -144,9 +144,9 @@ export default function TargetsPage() {
   
   const plansQuery = useMemo(() => {
     if (!user) return null;
+    // Query the subcollection within the user's document
     return query(
-      collection(db, "studyPlans"), 
-      where("userId", "==", user.uid),
+      collection(db, "users", user.uid, "studyPlans"),
       orderBy("createdAt", "desc")
     );
   }, [user]);
@@ -162,7 +162,8 @@ export default function TargetsPage() {
   }, [studyPlans]);
 
   const handleDelete = async (planId: string) => {
-    const planRef = doc(db, 'studyPlans', planId);
+    if (!user) return;
+    const planRef = doc(db, 'users', user.uid, 'studyPlans', planId);
     deleteDoc(planRef)
       .then(() => {
         setLocalStudyPlans(prev => prev.filter(p => p.id !== planId));
@@ -184,6 +185,7 @@ export default function TargetsPage() {
   };
 
   const handleUpdateStatus = async (planId: string, itemDate: string, newStatus: 'completed' | 'pending') => {
+    if (!user) return;
     setUpdating(prev => ({...prev, [`${planId}-${itemDate}`]: true}));
     
     const planIndex = localStudyPlans.findIndex(p => p.id === planId);
@@ -194,7 +196,7 @@ export default function TargetsPage() {
       item.date === itemDate ? { ...item, status: newStatus } : item
     );
     
-    const planRef = doc(db, "studyPlans", planId);
+    const planRef = doc(db, "users", user.uid, "studyPlans", planId);
     const updatePayload = { schedule: newSchedule };
 
     updateDoc(planRef, updatePayload)
@@ -232,6 +234,7 @@ export default function TargetsPage() {
   };
 
   const handleAutoDeleteToggle = async (planId: string, checked: boolean) => {
+    if (!user) return;
     const planIndex = localStudyPlans.findIndex(p => p.id === planId);
     if (planIndex === -1) return;
 
@@ -239,7 +242,7 @@ export default function TargetsPage() {
     newStudyPlans[planIndex].autoDeleteOnCompletion = checked;
     setLocalStudyPlans(newStudyPlans);
 
-    const planRef = doc(db, "studyPlans", planId);
+    const planRef = doc(db, "users", user.uid, "studyPlans", planId);
     const updatePayload = { autoDeleteOnCompletion: checked };
 
     updateDoc(planRef, updatePayload)

@@ -1,12 +1,9 @@
 // src/app/api/cron/route.ts
 import {NextResponse} from 'next/server';
 import {db} from '@/lib/firebase';
-import {collection, getDocs, updateDoc, doc, getDoc, writeBatch, arrayUnion, serverTimestamp, query, where} from 'firebase/firestore';
+import {collectionGroup, getDocs, updateDoc, doc, getDoc, writeBatch, serverTimestamp} from 'firebase/firestore';
 import {isPast, isToday, parseISO, startOfDay} from 'date-fns';
 import {sendDailySummary} from '@/ai/flows/send-daily-summary';
-import { User, getAuth} from "firebase/auth";
-import { app } from "@/lib/firebase";
-
 
 interface ScheduleItem {
   id: string;
@@ -21,8 +18,8 @@ interface StudyPlan {
   id: string;
   topic: string;
   schedule: ScheduleItem[];
-  userId: string; 
-  userEmail: string; 
+  userId: string;
+  userEmail: string;
   userName?: string;
 }
 
@@ -43,7 +40,7 @@ async function getUserProfile(userId: string): Promise<{ email: string; name: st
 export async function GET() {
   try {
     const batch = writeBatch(db);
-    const plansSnapshot = await getDocs(collection(db, 'studyPlans'));
+    const plansSnapshot = await getDocs(collectionGroup(db, 'studyPlans'));
     const today = startOfDay(new Date());
 
     for (const planDoc of plansSnapshot.docs) {
@@ -70,7 +67,8 @@ export async function GET() {
       }
 
       if (needsUpdate) {
-        const planRef = doc(db, 'studyPlans', plan.id);
+        // The reference now needs to point to the subcollection document
+        const planRef = doc(db, 'users', plan.userId, 'studyPlans', plan.id);
         batch.update(planRef, {schedule: updatedSchedule});
       }
 
@@ -89,7 +87,7 @@ export async function GET() {
       if (needsUpdate) {
           const missedTasksCount = updatedSchedule.filter(item => item.status === 'missed' && isPast(parseISO(item.date)) && !isToday(parseISO(item.date))).length;
           if (missedTasksCount > 0) {
-            const notificationRef = doc(collection(db, `users/${plan.userId}/notifications`));
+            const notificationRef = doc(db, `users/${plan.userId}/notifications`);
             batch.set(notificationRef, {
                 message: `You missed ${missedTasksCount} task(s) from your "${plan.topic}" plan. Catch up!`,
                 read: false,
@@ -101,7 +99,7 @@ export async function GET() {
         
       // Add a notification for today's tasks
       if (todaysTasks.length > 0) {
-          const notificationRef = doc(collection(db, `users/${plan.userId}/notifications`));
+          const notificationRef = doc(db, `users/${plan.userId}/notifications`);
           batch.set(notificationRef, {
               message: `You have ${todaysTasks.length} task(s) for "${plan.topic}" today. Let's get to it!`,
               read: false,

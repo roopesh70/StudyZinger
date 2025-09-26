@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { db } from "@/lib/firebase";
-import { collection, Timestamp, query, where, orderBy } from "firebase/firestore";
+import { collection, Timestamp, query, orderBy } from "firebase/firestore";
 import { isPast, parseISO, differenceInCalendarDays, isToday, subDays, startOfDay, format, eachDayOfInterval } from "date-fns";
 import { Loader2, ShieldCheck, Star, Zap, Trophy, Leaf } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -88,9 +88,9 @@ export default function ProgressPage() {
 
     const plansQuery = useMemo(() => {
         if (!user) return null;
+        // Query the subcollection within the user's document
         return query(
-            collection(db, "studyPlans"), 
-            where("userId", "==", user.uid), 
+            collection(db, "users", user.uid, "studyPlans"), 
             orderBy("createdAt", "desc")
         );
     }, [user]);
@@ -102,7 +102,7 @@ export default function ProgressPage() {
     useEffect(() => {
         if (!plans) return;
         
-        const reversedPlans = [...plans]; // Data is already sorted newest first
+        const reversedPlans = [...plans].reverse(); 
 
         const today = startOfDay(new Date());
 

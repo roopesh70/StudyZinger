@@ -118,7 +118,8 @@ export function ScheduleGenerator() {
         autoDeleteOnCompletion: false
       };
       
-      await addDoc(collection(db, "studyPlans"), planDoc);
+      // Save to the subcollection within the user's document
+      await addDoc(collection(db, "users", user.uid, "studyPlans"), planDoc);
 
       // Also save/update user profile information
       const userRef = doc(db, 'users', user.uid);
