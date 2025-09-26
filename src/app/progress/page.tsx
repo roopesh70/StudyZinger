@@ -91,10 +91,13 @@ export default function ProgressPage() {
         return query(collection(db, "studyPlans"));
     }, [user]);
 
-    const { data: plans, loading: plansLoading } = useCollection<StudyPlan>(plansQuery, {
-        where: ["userId", "==", user?.uid || ''],
-        orderBy: ["createdAt", "desc"]
-    });
+    const { data: plans, loading: plansLoading } = useCollection<StudyPlan>(
+        plansQuery,
+        {
+            where: ["userId", "==", user?.uid || ''],
+            orderBy: ["createdAt", "asc"]
+        }
+    );
 
     useEffect(() => {
         if (!plans) return;
