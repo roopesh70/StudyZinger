@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useAuth } from '@/firebase';
 import {
   GoogleAuthProvider,
@@ -9,6 +9,7 @@ import {
   signInWithEmailAndPassword,
   updateProfile,
   sendPasswordResetEmail,
+  getRedirectResult,
 } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import {
@@ -59,7 +60,51 @@ function LoginContent() {
     google: false,
     email: false,
     reset: false,
+    redirect: true, // Start in a loading state for the redirect check
   });
+
+  const handleSuccessfulAuth = async (user: any) => {
+    const userRef = doc(db, 'users', user.uid);
+    await setDoc(
+      userRef,
+      {
+        displayName: user.displayName,
+        email: user.email,
+        photoURL: user.photoURL,
+        lastLogin: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    const returnTo = sessionStorage.getItem('returnTo') || '/';
+    sessionStorage.removeItem('returnTo');
+    router.replace(returnTo);
+  };
+  
+  useEffect(() => {
+    if (!auth) return;
+
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result && result.user) {
+          // User has successfully signed in via redirect.
+          handleSuccessfulAuth(result.user);
+        } else {
+           // No redirect result, so we're not in a loading state for it anymore.
+           setLoading(prev => ({...prev, redirect: false}));
+        }
+      })
+      .catch((error) => {
+        console.error("Error getting redirect result:", error);
+        toast({
+          variant: 'destructive',
+          title: 'Sign-In Failed',
+          description: "There was an error during the Google Sign-In process."
+        });
+        setLoading(prev => ({...prev, redirect: false}));
+      });
+  }, [auth]);
+
 
   const handleGoogleLogin = async () => {
     if (!auth) return;
@@ -71,7 +116,6 @@ function LoginContent() {
     sessionStorage.setItem('returnTo', returnTo);
 
     try {
-      // We use a redirect for Google provider, so we'll land on the callback page
       await signInWithRedirect(auth, provider);
     } catch (error) {
       console.error('Error during sign-in redirect:', error);
@@ -93,24 +137,6 @@ function LoginContent() {
     resolver: zodResolver(registerSchema),
     defaultValues: { name: '', email: '', password: '' },
   });
-
-  const handleSuccessfulAuth = async (user: any) => {
-    const userRef = doc(db, 'users', user.uid);
-    await setDoc(
-      userRef,
-      {
-        displayName: user.displayName,
-        email: user.email,
-        photoURL: user.photoURL,
-        lastLogin: serverTimestamp(),
-      },
-      { merge: true }
-    );
-
-    const returnTo = searchParams.get('returnTo') || '/';
-    router.replace(returnTo);
-  };
-
 
   const handleEmailLogin = async (values: z.infer<typeof loginSchema>) => {
     if (!auth) return;
@@ -189,7 +215,7 @@ function LoginContent() {
     }
   };
 
-  if (!auth) {
+  if (!auth || loading.redirect) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
