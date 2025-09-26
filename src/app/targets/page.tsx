@@ -144,15 +144,14 @@ export default function TargetsPage() {
   
   const plansQuery = useMemo(() => {
     if (!user) return null;
-    return query(collection(db, "studyPlans"), where("userId", "==", user.uid));
+    return query(
+      collection(db, "studyPlans"), 
+      where("userId", "==", user.uid),
+      orderBy("createdAt", "desc")
+    );
   }, [user]);
 
-  const { data: studyPlans, loading: plansLoading } = useCollection<StudyPlan>(
-    plansQuery,
-    {
-        orderBy: ["createdAt", "desc"]
-    }
-  );
+  const { data: studyPlans, loading: plansLoading } = useCollection<StudyPlan>(plansQuery);
 
   const [localStudyPlans, setLocalStudyPlans] = useState<StudyPlan[]>([]);
   
@@ -467,3 +466,5 @@ export default function TargetsPage() {
     </>
   );
 }
+
+    
