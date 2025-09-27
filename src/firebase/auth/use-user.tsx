@@ -3,14 +3,11 @@
 import { useEffect, useState } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { useAuth } from '@/firebase';
-import { usePathname, useRouter } from 'next/navigation';
 
 export const useUser = () => {
   const auth = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     if (!auth) {
@@ -23,16 +20,6 @@ export const useUser = () => {
       (user) => {
         setUser(user);
         setLoading(false);
-
-        const isLoginPage = pathname === '/login';
-        
-        if (user && isLoginPage) {
-            // If the user is logged in and on the login page, redirect them.
-            // This is the single source of truth for post-login redirection.
-            const returnTo = sessionStorage.getItem('returnTo') || '/';
-            sessionStorage.removeItem('returnTo');
-            router.replace(returnTo);
-        }
       },
       (error) => {
         console.error('Auth state change error:', error);
@@ -42,7 +29,9 @@ export const useUser = () => {
     );
 
     return () => unsubscribe();
-  }, [auth, pathname, router]);
+  }, [auth]);
 
   return { user, loading };
 };
+
+    

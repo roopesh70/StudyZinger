@@ -4,12 +4,11 @@ import { useState, Suspense, useEffect } from 'react';
 import { useAuth, useUser } from '@/firebase';
 import {
   GoogleAuthProvider,
-  signInWithRedirect,
+  signInWithPopup,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   updateProfile,
   sendPasswordResetEmail,
-  getRedirectResult,
 } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import {
@@ -54,8 +53,7 @@ const registerSchema = z.object({
 const handleSuccessfulAuth = async (user: any) => {
   if (!user) return;
   const userRef = doc(db, 'users', user.uid);
-  // This operation updates the user profile in Firestore.
-  // The redirection logic is now handled by the useUser hook.
+  
   await setDoc(
     userRef,
     {
@@ -66,76 +64,53 @@ const handleSuccessfulAuth = async (user: any) => {
     },
     { merge: true }
   );
+
+  const returnTo = sessionStorage.getItem('returnTo') || '/';
+  sessionStorage.removeItem('returnTo');
+  window.location.href = returnTo;
 };
 
 
 function LoginContent() {
   const auth = useAuth();
-  const searchParams = useSearchParams(); // Keep this for the returnTo logic
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [loading, setLoading] = useState<{ [key: string]: boolean }>({
     google: false,
     email: false,
     reset: false,
-    redirect: true, 
   });
-  
+
   useEffect(() => {
-    if (!auth) return;
-
-    // This effect handles the result of a Google sign-in redirect.
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result && result.user) {
-          // User has successfully signed in via redirect.
-          // The useUser hook will handle the redirect to the final page.
-          handleSuccessfulAuth(result.user);
-        }
-      })
-      .catch((error) => {
-        console.error("Error getting redirect result:", error);
-        if (error.code === 'auth/unauthorized-domain') {
-           toast({
-             variant: 'destructive',
-             title: 'Sign-In Failed',
-             description: "This domain is not authorized for authentication. Please add it to the Firebase console.",
-             duration: 10000,
-           });
-        } else {
-          toast({
-            variant: 'destructive',
-            title: 'Sign-In Failed',
-            description: "There was an error during the Google Sign-In process."
-          });
-        }
-      }).finally(() => {
-         setLoading(prev => ({...prev, redirect: false}));
-      });
-  // The empty dependency array is crucial here.
-  // It ensures this effect runs only once when the component mounts.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auth, toast]);
-
+    const returnTo = searchParams.get('returnTo');
+    if (returnTo) {
+      sessionStorage.setItem('returnTo', returnTo);
+    }
+  }, [searchParams]);
 
   const handleGoogleLogin = async () => {
     if (!auth) return;
     setLoading(prev => ({ ...prev, google: true }));
-
     const provider = new GoogleAuthProvider();
-    const returnTo = searchParams.get('returnTo') || '/';
-    sessionStorage.setItem('returnTo', returnTo);
-
+    
     try {
-      await signInWithRedirect(auth, provider);
-      // The page will redirect to Google, then back. The useEffect hook will handle the result.
-    } catch (error) {
-      console.error('Error during sign-in redirect:', error);
-      setLoading(prev => ({ ...prev, google: false }));
+      const result = await signInWithPopup(auth, provider);
+      await handleSuccessfulAuth(result.user);
+    } catch (error: any) {
+      console.error('Error during Google sign-in:', error);
+      let description = 'An unexpected error occurred.';
+      if (error.code === 'auth/popup-closed-by-user') {
+        description = 'The sign-in popup was closed before completion.';
+      } else if (error.code === 'auth/unauthorized-domain') {
+        description = 'This domain is not authorized. Please add it to the Firebase console.';
+      }
       toast({
         variant: 'destructive',
         title: 'Google Sign-In Failed',
-        description: (error as Error).message,
+        description,
       });
+    } finally {
+      setLoading(prev => ({ ...prev, google: false }));
     }
   };
 
@@ -155,7 +130,6 @@ function LoginContent() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       await handleSuccessfulAuth(userCredential.user);
-      // The useUser hook will handle redirection.
     } catch (error) {
       console.error('Error signing in with email:', error);
       toast({
@@ -183,7 +157,6 @@ function LoginContent() {
         displayName: values.name,
       });
       await handleSuccessfulAuth(userCredential.user);
-      // The useUser hook will handle redirection.
     } catch (error: any) {
       console.error('Error registering with email:', error);
       let description = 'An unexpected error occurred. Please try again.';
@@ -227,15 +200,6 @@ function LoginContent() {
       setLoading(prev => ({...prev, reset: false}));
     }
   };
-
-  if (loading.redirect) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <span className="ml-4">Finalizing login...</span>
-      </div>
-    );
-  }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
@@ -400,9 +364,9 @@ function LoginContent() {
           onClick={handleGoogleLogin}
           className="w-full"
           variant="outline"
-          disabled={loading.google || loading.redirect}
+          disabled={loading.google}
         >
-          {loading.google || loading.redirect ? (
+          {loading.google ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
             <svg
@@ -433,7 +397,18 @@ export default function LoginPage() {
   const { user, loading } = useUser();
   const router = useRouter();
 
-  if (loading) {
+  useEffect(() => {
+    // This effect redirects the user if they are already logged in.
+    // It waits until the loading state is false to ensure auth state is settled.
+    if (!loading && user) {
+      const returnTo = sessionStorage.getItem('returnTo') || '/';
+      sessionStorage.removeItem('returnTo');
+      router.replace(returnTo);
+    }
+  }, [user, loading, router]);
+
+  if (loading || user) {
+    // Show a loader while checking auth state or during the redirect process
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -441,19 +416,12 @@ export default function LoginPage() {
     );
   }
 
-  // The useUser hook now handles redirection, but this is a good fallback.
-  if (user) {
-    router.replace('/');
-    return (
-        <div className="flex min-h-screen items-center justify-center">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        </div>
-    );
-  }
-
+  // If not loading and no user, show the login page.
   return (
     <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>}>
       <LoginContent />
     </Suspense>
   );
 }
+
+    
