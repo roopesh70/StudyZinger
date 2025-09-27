@@ -54,6 +54,8 @@ const handleSuccessfulAuth = async (user: any) => {
   if (!user) return;
   const userRef = doc(db, 'users', user.uid);
   
+  // This function now only handles writing to Firestore.
+  // The redirect is handled by the useUser hook.
   await setDoc(
     userRef,
     {
@@ -64,10 +66,6 @@ const handleSuccessfulAuth = async (user: any) => {
     },
     { merge: true }
   );
-
-  const returnTo = sessionStorage.getItem('returnTo') || '/';
-  sessionStorage.removeItem('returnTo');
-  window.location.href = returnTo;
 };
 
 
@@ -96,6 +94,7 @@ function LoginContent() {
     try {
       const result = await signInWithPopup(auth, provider);
       await handleSuccessfulAuth(result.user);
+      // The redirect will be handled by the useUser hook now
     } catch (error: any) {
       console.error('Error during Google sign-in:', error);
       let description = 'An unexpected error occurred.';
@@ -156,7 +155,12 @@ function LoginContent() {
       await updateProfile(userCredential.user, {
         displayName: values.name,
       });
-      await handleSuccessfulAuth(userCredential.user);
+      // Pass the fresh user object to handleSuccessfulAuth
+      const userToSave = {
+        ...userCredential.user,
+        displayName: values.name,
+      };
+      await handleSuccessfulAuth(userToSave);
     } catch (error: any) {
       console.error('Error registering with email:', error);
       let description = 'An unexpected error occurred. Please try again.';
@@ -397,18 +401,9 @@ export default function LoginPage() {
   const { user, loading } = useUser();
   const router = useRouter();
 
-  useEffect(() => {
-    // This effect redirects the user if they are already logged in.
-    // It waits until the loading state is false to ensure auth state is settled.
-    if (!loading && user) {
-      const returnTo = sessionStorage.getItem('returnTo') || '/';
-      sessionStorage.removeItem('returnTo');
-      router.replace(returnTo);
-    }
-  }, [user, loading, router]);
-
   if (loading || user) {
     // Show a loader while checking auth state or during the redirect process
+    // The useUser hook will handle the redirect
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -423,5 +418,3 @@ export default function LoginPage() {
     </Suspense>
   );
 }
-
-    
