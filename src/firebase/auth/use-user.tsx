@@ -28,6 +28,7 @@ export const useUser = () => {
         
         if (user && isLoginPage) {
             // If the user is logged in and on the login page, redirect them.
+            // This is the single source of truth for post-login redirection.
             const returnTo = sessionStorage.getItem('returnTo') || '/';
             sessionStorage.removeItem('returnTo');
             router.replace(returnTo);

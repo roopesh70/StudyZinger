@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, Suspense, useEffect } from 'react';
 import { useAuth, useUser } from '@/firebase';
@@ -53,9 +52,10 @@ const registerSchema = z.object({
 });
 
 const handleSuccessfulAuth = async (user: any) => {
+  if (!user) return;
   const userRef = doc(db, 'users', user.uid);
-  // This operation is "fire and forget" from the user's perspective.
-  // The redirection logic is handled by the useUser hook.
+  // This operation updates the user profile in Firestore.
+  // The redirection logic is now handled by the useUser hook.
   await setDoc(
     userRef,
     {
@@ -71,8 +71,7 @@ const handleSuccessfulAuth = async (user: any) => {
 
 function LoginContent() {
   const auth = useAuth();
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams(); // Keep this for the returnTo logic
   const { toast } = useToast();
   const [loading, setLoading] = useState<{ [key: string]: boolean }>({
     google: false,
@@ -89,7 +88,7 @@ function LoginContent() {
       .then((result) => {
         if (result && result.user) {
           // User has successfully signed in via redirect.
-          // Don't redirect here. The useUser hook will handle it.
+          // The useUser hook will handle the redirect to the final page.
           handleSuccessfulAuth(result.user);
         }
       })
@@ -115,7 +114,7 @@ function LoginContent() {
   // The empty dependency array is crucial here.
   // It ensures this effect runs only once when the component mounts.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auth]);
+  }, [auth, toast]);
 
 
   const handleGoogleLogin = async () => {
@@ -156,7 +155,7 @@ function LoginContent() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       await handleSuccessfulAuth(userCredential.user);
-      // Don't redirect here. The useUser hook will handle it.
+      // The useUser hook will handle redirection.
     } catch (error) {
       console.error('Error signing in with email:', error);
       toast({
@@ -184,7 +183,7 @@ function LoginContent() {
         displayName: values.name,
       });
       await handleSuccessfulAuth(userCredential.user);
-      // Don't redirect here. The useUser hook will handle it.
+      // The useUser hook will handle redirection.
     } catch (error: any) {
       console.error('Error registering with email:', error);
       let description = 'An unexpected error occurred. Please try again.';
@@ -442,9 +441,8 @@ export default function LoginPage() {
     );
   }
 
+  // The useUser hook now handles redirection, but this is a good fallback.
   if (user) {
-    // This part should not be strictly necessary if the useUser hook handles redirection,
-    // but it's a good fallback.
     router.replace('/');
     return (
         <div className="flex min-h-screen items-center justify-center">
